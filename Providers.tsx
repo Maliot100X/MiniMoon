@@ -5,12 +5,11 @@ import { WagmiProvider, createConfig, http, cookieStorage, createStorage } from 
 import { base, baseSepolia } from 'wagmi/chains';
 import { useState, useEffect } from 'react';
 
-// Get project ID from env, or use empty string (Web3Modal will work in limited mode)
 const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '';
 
 const metadata = {
   name: 'MiniMoon',
-  description: 'Pokemon Meta Trading Game on Base Chain',
+  description: 'Meta Trading Game on Base Chain',
   url: 'https://minimoon.game',
   icons: ['/icon.svg'],
 };
@@ -31,12 +30,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Create Wagmi config with default RPC URLs (works without env keys)
+      // 1️⃣ Create Wagmi config
       const config = createConfig({
         chains,
         transports: {
-          [base.id]: http('https://mainnet.base.org'),
-          [baseSepolia.id]: http('https://sepolia.base.org'),
+          [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'),
+          [baseSepolia.id]: http(
+            process.env.NEXT_PUBLIC_BASESCAN_RPC_URL || 'https://sepolia.base.org'
+          ),
         },
         ssr: true,
         storage: createStorage({ storage: cookieStorage }),
@@ -44,7 +45,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       setWagmiConfig(config);
 
-      // Initialize Web3Modal only if projectId exists
+      // 2️⃣ Initialize Web3Modal only if projectId exists
       if (projectId) {
         import('@web3modal/wagmi/react').then(({ createWeb3Modal }) => {
           createWeb3Modal({
@@ -66,7 +67,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Show loading state while initializing
   if (!wagmiConfig) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">

@@ -1,398 +1,384 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAccount } from 'wagmi';
-import {
-  Search,
-  Filter,
-  Heart,
-  ShoppingCart,
-  User,
-  Star,
-  Sword,
-  Shield,
-  Zap,
-  TrendingUp,
-  Clock,
-  Loader2,
-} from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const marketplaceListings = [
-  {
-    id: 1,
-    name: 'Moon Dragon',
-    rarity: 'Legendary',
-    power: 1250,
-    health: 2500,
-    attack: 180,
-    defense: 120,
-    speed: 95,
-    level: 45,
-    wins: 156,
-    price: '2.5 ETH',
-    seller: '0x1234...5678',
-    listed: '2h ago',
-    image: '🦖',
-  },
-  {
-    id: 2,
-    name: 'Shadow Wolf',
-    rarity: 'Epic',
-    power: 680,
-    health: 1200,
-    attack: 95,
-    defense: 65,
-    speed: 150,
-    level: 28,
-    wins: 89,
-    price: '0.8 ETH',
-    seller: '0xabcd...efgh',
-    listed: '5h ago',
-    image: '🐺',
-  },
-  {
-    id: 3,
-    name: 'Crystal Golem',
-    rarity: 'Rare',
-    power: 420,
-    health: 1800,
-    attack: 55,
-    defense: 180,
-    speed: 20,
-    level: 22,
-    wins: 45,
-    price: '0.15 ETH',
-    seller: '0x9876...5432',
-    listed: '1d ago',
-    image: '🗿',
-  },
-  {
-    id: 4,
-    name: 'Lightning Fox',
-    rarity: 'Uncommon',
-    power: 180,
-    health: 450,
-    attack: 42,
-    defense: 28,
-    speed: 120,
-    level: 12,
-    wins: 23,
-    price: '0.05 ETH',
-    seller: '0xijkl...mnop',
-    listed: '3h ago',
-    image: '🦊',
-  },
-  {
-    id: 5,
-    name: 'Flame Phoenix',
-    rarity: 'Mythic',
-    power: 2800,
-    health: 3500,
-    attack: 350,
-    defense: 200,
-    speed: 180,
-    level: 72,
-    wins: 312,
-    price: '8.5 ETH',
-    seller: '0xqueen...king',
-    listed: '30m ago',
-    image: '🔥',
-  },
-  {
-    id: 6,
-    name: 'Forest Spirit',
-    rarity: 'Common',
-    power: 85,
-    health: 250,
-    attack: 22,
-    defense: 18,
-    speed: 65,
-    level: 6,
-    wins: 8,
-    price: '0.01 ETH',
-    seller: '0xnewb...ie',
-    listed: '6h ago',
-    image: '🧚',
-  },
+const marketplacePokemon = [
+  { id: 6, name: 'Charizard', type: 'fire', power: 500, price: 5000, seller: 'Trainer1', rarity: 'Rare', emoji: '🔥' },
+  { id: 9, name: 'Blastoise', type: 'water', power: 500, price: 5000, seller: 'WaterPro', rarity: 'Rare', emoji: '💧' },
+  { id: 25, name: 'Pikachu', type: 'electric', power: 120, price: 500, seller: 'AshFan', rarity: 'Common', emoji: '⚡' },
+  { id: 3, name: 'Venusaur', type: 'grass', power: 500, price: 5000, seller: 'GreenThumb', rarity: 'Rare', emoji: '🌿' },
+  { id: 94, name: 'Gengar', type: 'ghost', power: 500, price: 8000, seller: 'SpookyMasta', rarity: 'Epic', emoji: '👻' },
+  { id: 149, name: 'Dragonite', type: 'dragon', power: 600, price: 15000, seller: 'DragonLord', rarity: 'Epic', emoji: '🐉' },
+  { id: 150, name: 'Mewtwo', type: 'psychic', power: 1000, price: 50000, seller: 'Legendary', rarity: 'Legendary', emoji: '🧬' },
+  { id: 282, name: 'Gardevoir', type: 'fairy', power: 450, price: 6000, seller: 'FairyQueen', rarity: 'Epic', emoji: '🧚' },
+  { id: 68, name: 'Machamp', type: 'fighting', power: 480, price: 4000, seller: 'FighterX', rarity: 'Rare', emoji: '🥊' },
+  { id: 130, name: 'Gyarados', type: 'water', power: 550, price: 7000, seller: 'SeaKing', rarity: 'Rare', emoji: '🐋' },
+  { id: 491, name: 'Darkrai', type: 'dark', power: 1100, price: 100000, seller: 'NightMare', rarity: 'Mythic', emoji: '🌑' },
+  { id: 493, name: 'Arceus', type: 'normal', power: 1500, price: 200000, seller: 'GodPokemon', rarity: 'Mythic', emoji: '⭐' },
+  { id: 384, name: 'Rayquaza', type: 'dragon', power: 1300, price: 150000, seller: 'SkyDragon', rarity: 'Mythic', emoji: '🐲' },
+  { id: 257, name: 'Blaziken', type: 'fighting', power: 550, price: 5500, seller: 'FireKick', rarity: 'Rare', emoji: '🔥' },
 ];
 
-const rarityColors = {
-  Common: 'text-gray-400 bg-gray-400/10 border-gray-400/20',
-  Uncommon: 'text-green-400 bg-green-400/10 border-green-400/20',
-  Rare: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  Epic: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-  Legendary: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  Mythic: 'text-red-400 bg-red-400/10 border-red-400/20',
+const shopItems = [
+  { id: 'egg1', name: 'Pokemon Egg', type: 'egg', price: 100, emoji: '🥚', desc: 'Hatch a random Pokemon!', stock: 999 },
+  { id: 'egg10', name: 'Egg Pack (10)', type: 'egg_pack', price: 900, emoji: '🥚🎁', desc: '10 eggs - 10% bonus', stock: 99 },
+  { id: 'fire_aura', name: 'Fire Aura', type: 'aura', price: 2000, emoji: '🔥', desc: '+20% Fire damage', stock: 50 },
+  { id: 'water_aura', name: 'Water Aura', type: 'aura', price: 2000, emoji: '💧', desc: '+20% Water defense', stock: 50 },
+  { id: 'lightning_boost', name: 'Lightning Boost', type: 'boost', price: 1500, emoji: '⚡', desc: '+30% Electric damage', stock: 75 },
+  { id: 'grass_crown', name: 'Grass Crown', type: 'cosmetic', price: 3000, emoji: '🌿', desc: 'Green avatar frame', stock: 25 },
+  { id: 'dragon_wings', name: 'Dragon Wings', type: 'cosmetic', price: 5000, emoji: '🐉', desc: 'Dragon wings cosmetic', stock: 15 },
+  { id: 'energy_pack', name: 'Energy Pack', type: 'consumable', price: 500, emoji: '⚡', desc: '+100 Energy', stock: 200 },
+  { id: 'power_gem', name: 'Power Gem', type: 'consumable', price: 1000, emoji: '💎', desc: '+50 Power permanently', stock: 100 },
+  { id: 'mystery_box', name: 'Mystery Box', type: 'mystery', price: 2500, emoji: '🎁', desc: 'Random rare item!', stock: 50 },
+];
+
+const typeEmojis: Record<string, string> = {
+  fire: '🔥', water: '💧', electric: '⚡', grass: '🌿',
+  ice: '❄️', dragon: '🐉', ghost: '👻', fighting: '🥊',
+  fairy: '🧚', psychic: '🧠', normal: '⚪', dark: '🌑',
 };
 
-const rarityGradients = {
-  Common: 'from-gray-500 to-gray-600',
-  Uncommon: 'from-green-500 to-green-600',
-  Rare: 'from-blue-500 to-blue-600',
-  Epic: 'from-purple-500 to-purple-600',
-  Legendary: 'from-amber-500 to-orange-500',
-  Mythic: 'from-red-500 to-pink-500',
+const typeColors: Record<string, { bg: string; text: string }> = {
+  fire: { bg: 'bg-red-500/20', text: 'text-red-400' },
+  water: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
+  electric: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+  grass: { bg: 'bg-green-500/20', text: 'text-green-400' },
+  ice: { bg: 'bg-cyan-500/20', text: 'text-cyan-400' },
+  dragon: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+  ghost: { bg: 'bg-indigo-500/20', text: 'text-indigo-400' },
+  fighting: { bg: 'bg-orange-500/20', text: 'text-orange-400' },
+  fairy: { bg: 'bg-pink-500/20', text: 'text-pink-400' },
+  psychic: { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400' },
+  normal: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
+  dark: { bg: 'bg-slate-500/20', text: 'text-slate-400' },
+};
+
+const rarityColors: Record<string, { text: string; border: string; glow: string }> = {
+  Common: { text: 'text-gray-400', border: 'border-gray-400', glow: 'shadow-gray-400/20' },
+  Uncommon: { text: 'text-green-400', border: 'border-green-400', glow: 'shadow-green-400/20' },
+  Rare: { text: 'text-blue-400', border: 'border-blue-400', glow: 'shadow-blue-400/20' },
+  Epic: { text: 'text-purple-400', border: 'border-purple-400', glow: 'shadow-purple-400/20' },
+  Legendary: { text: 'text-amber-400', border: 'border-amber-400', glow: 'shadow-amber-400/20' },
+  Mythic: { text: 'text-red-500', border: 'border-red-500', glow: 'shadow-red-500/30' },
 };
 
 export default function MarketplacePage() {
-  const { isConnected } = useAccount();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRarity, setSelectedRarity] = useState('All');
-  const [sortBy, setSortBy] = useState('newest');
-  const [buying, setBuying] = useState<number | null>(null);
-  const [liked, setLiked] = useState<Set<number>>(new Set());
+  const [activeTab, setActiveTab] = useState<'marketplace' | 'shop'>('marketplace');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string | null>(null);
+  const [selectedRarity, setSelectedRarity] = useState<string | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState<{ type: string; item: any } | null>(null);
 
-  const filteredListings = marketplaceListings.filter((listing) => {
-    const matchesSearch = listing.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRarity = selectedRarity === 'All' || listing.rarity === selectedRarity;
-    return matchesSearch && matchesRarity;
+  const filteredMarketplace = marketplacePokemon.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !filterType || p.type === filterType;
+    const matchesRarity = !selectedRarity || p.rarity === selectedRarity;
+    return matchesSearch && matchesType && matchesRarity;
   });
 
-  const handleBuy = async (listingId: number) => {
-    if (!isConnected) {
-      alert('Please connect your wallet first!');
-      return;
-    }
-    setBuying(listingId);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setBuying(null);
-    alert('Purchase successful! Monster transferred to your wallet.');
+  const filteredShop = shopItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !filterType || item.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  const handlePurchase = (type: string, item: any) => {
+    setShowPurchaseModal({ type, item });
   };
 
-  const toggleLike = (id: number) => {
-    const newLiked = new Set(liked);
-    if (newLiked.has(id)) {
-      newLiked.delete(id);
-    } else {
-      newLiked.add(id);
+  const confirmPurchase = () => {
+    if (showPurchaseModal) {
+      alert(`Purchased ${showPurchaseModal.item.name} for ${showPurchaseModal.item.price} $MNMOON!`);
+      setShowPurchaseModal(null);
     }
-    setLiked(newLiked);
   };
 
-  const stats = {
-    totalListings: marketplaceListings.length,
-    avgPrice: '0.45 ETH',
-    volume24h: '125 ETH',
-    floorPrice: '0.01 ETH',
+  const getPokemonImageUrl = (id: number) => {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+  };
+
+  const types = ['fire', 'water', 'electric', 'grass', 'ice', 'dragon', 'ghost', 'fighting', 'fairy', 'psychic', 'egg', 'aura', 'boost', 'cosmetic', 'consumable', 'mystery'];
+  const rarities = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic'];
+
+  const formatPrice = (price: number) => {
+    if (price >= 1000) {
+      return `${(price / 1000).toFixed(1)}K`;
+    }
+    return price.toString();
   };
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">Marketplace</h1>
-          <p className="mt-2 text-gray-400">
-            Buy, sell, and trade monsters with other players
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+      <div className="bg-slate-800/50 border-b border-white/5 py-6 sticky top-14 z-40">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold text-white">
+              {activeTab === 'marketplace' ? '🏪 Pokemon Marketplace' : '🛒 Item Shop'}
+            </h1>
+            <Link href="/" className="text-gray-400 hover:text-white">← Back</Link>
+          </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-4 mb-8">
-          <div className="rounded-xl bg-slate-800/50 p-6 border border-white/5">
-            <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-blue-500/20 p-2">
-                <ShoppingCart className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">Total Listings</div>
-                <div className="text-2xl font-bold text-white">{stats.totalListings}</div>
-              </div>
-            </div>
+          <div className="flex space-x-2 mb-4">
+            <button
+              onClick={() => setActiveTab('marketplace')}
+              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                activeTab === 'marketplace'
+? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                  : 'bg-slate-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              🏪 Buy Pokemon
+            </button>
+            <button
+              onClick={() => setActiveTab('shop')}
+              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                activeTab === 'shop'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                  : 'bg-slate-700 text-gray-400 hover:text-white'
+              }`}
+            >
+              🛒 Item Shop
+            </button>
           </div>
-          <div className="rounded-xl bg-slate-800/50 p-6 border border-white/5">
-            <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-amber-500/20 p-2">
-                <TrendingUp className="h-5 w-5 text-amber-400" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">Avg Price</div>
-                <div className="text-2xl font-bold text-white">{stats.avgPrice}</div>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl bg-slate-800/50 p-6 border border-white/5">
-            <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-green-500/20 p-2">
-                <Zap className="h-5 w-5 text-green-400" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">24h Volume</div>
-                <div className="text-2xl font-bold text-white">{stats.volume24h}</div>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl bg-slate-800/50 p-6 border border-white/5">
-            <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-purple-500/20 p-2">
-                <Star className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">Floor Price</div>
-                <div className="text-2xl font-bold text-white">{stats.floorPrice}</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <div className="flex flex-wrap gap-3">
             <input
               type="text"
-              placeholder="Search monsters..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl bg-slate-800 py-3 pl-12 pr-4 text-white placeholder-gray-500 border border-white/5 focus:border-amber-500/50 focus:outline-none"
+              placeholder={activeTab === 'marketplace' ? 'Search Pokemon...' : 'Search items...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 min-w-48 px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-gray-400 border border-white/10 focus:border-amber-500/50 focus:outline-none"
             />
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {/* Rarity Filter */}
             <select
-              value={selectedRarity}
-              onChange={(e) => setSelectedRarity(e.target.value)}
-              className="rounded-xl bg-slate-800 py-3 px-4 text-white border border-white/5 focus:border-amber-500/50 focus:outline-none"
+              value={filterType || ''}
+              onChange={(e) => setFilterType(e.target.value || null)}
+              className="px-4 py-3 rounded-xl bg-slate-700/50 text-white border border-white/10 focus:border-amber-500/50 focus:outline-none"
             >
-              <option value="All">All Rarities</option>
-              <option value="Common">Common</option>
-              <option value="Uncommon">Uncommon</option>
-              <option value="Rare">Rare</option>
-              <option value="Epic">Epic</option>
-              <option value="Legendary">Legendary</option>
-              <option value="Mythic">Mythic</option>
+              <option value="">All Types</option>
+              {activeTab === 'marketplace' ? (
+                types.filter(t => !['egg', 'aura', 'boost', 'cosmetic', 'consumable', 'mystery'].includes(t)).map(type => (
+                  <option key={type} value={type}>
+                    {typeEmojis[type] || '📦'} {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="egg">🥚 Eggs</option>
+                  <option value="aura">✨ Auras</option>
+                  <option value="boost">⚡ Boosts</option>
+                  <option value="cosmetic">🎨 Cosmetics</option>
+                  <option value="consumable">💊 Consumables</option>
+                  <option value="mystery">🎁 Mystery</option>
+                </>
+              )}
             </select>
-
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl bg-slate-800 py-3 px-4 text-white border border-white/5 focus:border-amber-500/50 focus:outline-none"
-            >
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="power">Power</option>
-            </select>
+            {activeTab === 'marketplace' && (
+              <select
+                value={selectedRarity || ''}
+                onChange={(e) => setSelectedRarity(e.target.value || null)}
+                className="px-4 py-3 rounded-xl bg-slate-700/50 text-white border border-white/10 focus:border-amber-500/50 focus:outline-none"
+              >
+                <option value="">All Rarities</option>
+                {rarities.map(rarity => (
+                  <option key={rarity} value={rarity}>{rarity}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Listings Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredListings.map((listing, index) => (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <AnimatePresence mode="wait">
+          {activeTab === 'marketplace' ? (
             <motion.div
-              key={listing.id}
+              key="marketplace"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-white/5 card-hover"
+              exit={{ opacity: 0, y: -20 }}
             >
-              {/* Card Header with Monster Image */}
-              <div className={`relative bg-gradient-to-br ${rarityGradients[listing.rarity as keyof typeof rarityGradients]} p-8`}>
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
                 <div className="flex items-center justify-between">
-                  <span className={`rounded-full border px-3 py-1 text-xs font-bold ${rarityColors[listing.rarity as keyof typeof rarityColors]}`}>
-                    {listing.rarity}
-                  </span>
-                  <button
-                    onClick={() => toggleLike(listing.id)}
-                    className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+                  <div>
+                    <p className="text-sm text-gray-400">Your Balance</p>
+                    <p className="text-2xl font-bold text-amber-400">12,500 $MNMOON</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Listed Pokemon</p>
+                    <p className="text-2xl font-bold text-white">{filteredMarketplace.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {filteredMarketplace.map((pokemon, index) => {
+                  const colors = typeColors[pokemon.type] || typeColors.normal;
+                  const rarity = rarityColors[pokemon.rarity];
+
+                  return (
+                    <motion.div
+                      key={`${pokemon.id}-${index}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.03 }}
+                      className={`relative bg-slate-800/50 rounded-xl p-4 border-2 ${rarity.border} hover:border-amber-500/50 transition-all hover:scale-105 cursor-pointer`}
+                    >
+                      <div className="text-center">
+                        <div className="relative w-20 h-20 mx-auto mb-3">
+                          <Image
+                            src={getPokemonImageUrl(pokemon.id)}
+                            alt={pokemon.name}
+                            width={80}
+                            height={80}
+                            className="object-contain"
+                          />
+                        </div>
+                        <h3 className="font-bold text-white">{pokemon.name}</h3>
+                        <div className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${colors.bg} ${colors.text}`}>
+                          {pokemon.rarity}
+                        </div>
+                        <div className="mt-2 flex items-center justify-center space-x-1 text-gray-400 text-sm">
+                          <span>{typeEmojis[pokemon.type]}</span>
+                          <span className="capitalize">{pokemon.type}</span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-center space-x-1 text-amber-400">
+                          <span>⚔️</span>
+                          <span className="font-bold">{pokemon.power}</span>
+                        </div>
+                        <div className="mt-3 p-2 rounded-lg bg-slate-700/50">
+                          <div className="text-xs text-gray-400 mb-1">Price</div>
+                          <div className="text-xl font-bold text-white">{formatPrice(pokemon.price)} $MNMOON</div>
+                          <div className="text-xs text-gray-500">@{pokemon.seller}</div>
+                        </div>
+                        <button
+                          onClick={() => handlePurchase('pokemon', pokemon)}
+                          className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white hover:opacity-90 transition-opacity"
+                        >
+                          Buy Now
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {filteredMarketplace.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-xl font-bold text-white mb-2">No Pokemon Found</h3>
+                  <p className="text-gray-400">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="shop"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-400">Your Balance</p>
+                    <p className="text-2xl font-bold text-amber-400">12,500 $MNMOON</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Available Items</p>
+                    <p className="text-2xl font-bold text-white">{filteredShop.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {filteredShop.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="relative bg-slate-800/50 rounded-xl p-4 border border-white/5 hover:border-purple-500/30 transition-all hover:scale-105 cursor-pointer"
                   >
-                    <Heart className={`h-5 w-5 ${liked.has(listing.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    <div className="text-center">
+                      <div className="text-5xl mb-3">{item.emoji}</div>
+                      <h3 className="font-bold text-white">{item.name}</h3>
+                      <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
+                      <div className="mt-3 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                        <div className="text-xs text-purple-300 mb-1">Price</div>
+                        <div className="text-xl font-bold text-amber-400">{formatPrice(item.price)} $MNMOON</div>
+                        <div className="text-xs text-gray-500">{item.stock} in stock</div>
+                      </div>
+                      <button
+                        onClick={() => handlePurchase('item', item)}
+                        className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 font-bold text-white hover:opacity-90 transition-opacity"
+                      >
+                        Buy
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {filteredShop.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-xl font-bold text-white mb-2">No Items Found</h3>
+                  <p className="text-gray-400">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence>
+        {showPurchaseModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowPurchaseModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="text-6xl mb-4">
+                  {showPurchaseModal.type === 'pokemon' ? '🐉' : '🛒'}
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">{showPurchaseModal.item.name}</h2>
+                <p className="text-gray-400 mb-4">{showPurchaseModal.item.desc}</p>
+                <div className="p-4 rounded-xl bg-slate-700/50 mb-4">
+                  <p className="text-sm text-gray-400">Price</p>
+                  <p className="text-3xl font-bold text-amber-400">{showPurchaseModal.item.price.toLocaleString()} $MNMOON</p>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowPurchaseModal(null)}
+                    className="flex-1 py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmPurchase}
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white hover:opacity-90 transition-opacity"
+                  >
+                    Confirm
                   </button>
                 </div>
-                <div className="mt-6 flex items-center justify-center">
-                  <span className="text-8xl filter drop-shadow-lg">{listing.image}</span>
-                </div>
-                <div className="mt-4 text-center">
-                  <h3 className="text-2xl font-bold text-white">{listing.name}</h3>
-                  <p className="text-white/70">Level {listing.level}</p>
-                </div>
               </div>
-
-              {/* Stats */}
-              <div className="p-6">
-                {/* Power & Health */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <Sword className="h-4 w-4 text-red-400" />
-                    <span className="text-sm text-gray-400">Power</span>
-                  </div>
-                  <span className="font-bold text-white">{listing.power.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4 text-green-400" />
-                    <span className="text-sm text-gray-400">Health</span>
-                  </div>
-                  <span className="font-bold text-white">{listing.health.toLocaleString()}</span>
-                </div>
-
-                {/* Secondary Stats */}
-                <div className="grid grid-cols-3 gap-4 py-4 border-t border-white/5">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500">ATK</div>
-                    <div className="font-bold text-white">{listing.attack}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500">DEF</div>
-                    <div className="font-bold text-white">{listing.defense}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500">SPD</div>
-                    <div className="font-bold text-white">{listing.speed}</div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
-                  <div className="flex items-center space-x-2 text-sm text-gray-400">
-                    <User className="h-4 w-4" />
-                    <span>{listing.seller}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-400">
-                    <Clock className="h-4 w-4" />
-                    <span>{listing.listed}</span>
-                  </div>
-                </div>
-
-                {/* Buy Button */}
-                <button
-                  onClick={() => handleBuy(listing.id)}
-                  disabled={buying === listing.id}
-                  className="mt-6 w-full flex items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 py-4 font-bold text-white hover:from-amber-400 hover:to-amber-500 transition-all disabled:opacity-50"
-                >
-                  {buying === listing.id ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Buying...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="h-5 w-5" />
-                      <span>Buy for {listing.price}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Glow Effect */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${rarityGradients[listing.rarity as keyof typeof rarityGradients]} opacity-0 transition-opacity group-hover:opacity-10 blur-xl`} />
             </motion.div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredListings.length === 0 && (
-          <div className="text-center py-16">
-            <ShoppingCart className="mx-auto h-16 w-16 text-gray-600" />
-            <h3 className="mt-4 text-xl font-bold text-white">No monsters found</h3>
-            <p className="mt-2 text-gray-400">Try adjusting your search or filters</p>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
