@@ -11,7 +11,7 @@ const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '';
 const metadata = {
   name: 'MiniMoon',
   description: 'Pokemon Meta Trading Game on Base Chain',
-  url: 'https://minimoon.game',
+  url: 'https://mini-moon-ten.vercel.app',
   icons: ['/icon.svg'],
 };
 
@@ -62,6 +62,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
             } as any,
           });
         });
+      }
+
+      // Call FarCaster SDK ready() to hide splash screen
+      // @ts-ignore - Neynar SDK may not be installed
+      if (window.sdk && window.sdk.actions) {
+        // @ts-ignore
+        window.sdk.actions.ready();
       }
     }
   }, []);

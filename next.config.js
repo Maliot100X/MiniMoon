@@ -23,6 +23,11 @@ const nextConfig = {
         hostname: 'cloudflare-ipfs.com',
         pathname: '/ipfs/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.streme.fun',
+        pathname: '/images/**',
+      },
     ],
   },
 };

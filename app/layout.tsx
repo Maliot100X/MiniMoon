@@ -4,6 +4,7 @@ import { Inter, Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Navigation } from '@/components/Navigation';
+import { FloatingBot } from '@/components/FloatingBot';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -17,29 +18,30 @@ const robotoMono = Roboto_Mono({
 
 // Server component metadata – ✅ allowed
 export const metadata: Metadata = {
-  metadataBase: new URL('https://minimoon.game'),
+  metadataBase: new URL('https://mini-moon-ten.vercel.app'),
   title: 'MiniMoon - Pokemon Meta Trading Game',
   description: 'Collect, battle, and trade Pokemon-style monsters on Base Chain. Play on FarCaster Mini App!',
   keywords: ['MiniMoon', 'Meta Trading Game', 'Base Chain', 'Pokemon', 'NFT', 'Web3', 'Gaming'],
-  // FarCaster Frame/Mini App Metadata
+  // Base Mini App Verification and FarCaster Frame/Mini App Metadata
   other: {
+    'base:app_id': '6980b7dbc6a03f3fe39cb88a',
     'fc:frame': 'vNext',
-    'fc:frame:image': 'https://minimoon.game/og-image.png',
+    'fc:frame:image': 'https://mini-moon-ten.vercel.app/og-image.png',
     'fc:frame:image:aspect_ratio': '1:1',
-    'fc:frame:post_url': 'https://minimoon.game/api/frame',
+    'fc:frame:post_url': 'https://mini-moon-ten.vercel.app/api/frame',
     // Fallback frame buttons (required for frame validation)
     'fc:frame:button:1': 'Play MiniMoon',
     'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://minimoon.game',
+    'fc:frame:button:1:target': 'https://mini-moon-ten.vercel.app',
     'fc:frame:button:2': 'Battle Arena',
     'fc:frame:button:2:action': 'link',
-    'fc:frame:button:2:target': 'https://minimoon.game/arena',
+    'fc:frame:button:2:target': 'https://mini-moon-ten.vercel.app/arena',
     'fc:frame:button:3': 'Marketplace',
     'fc:frame:button:3:action': 'link',
-    'fc:frame:button:3:target': 'https://minimoon.game/marketplace',
+    'fc:frame:button:3:target': 'https://mini-moon-ten.vercel.app/marketplace',
     'fc:frame:button:4': 'My Profile',
     'fc:frame:button:4:action': 'link',
-    'fc:frame:button:4:target': 'https://minimoon.game/profile',
+    'fc:frame:button:4:target': 'https://mini-moon-ten.vercel.app/profile',
   },
   // Open Graph for sharing
   openGraph: {
@@ -49,7 +51,7 @@ export const metadata: Metadata = {
     siteName: 'MiniMoon',
     images: [
       {
-        url: 'https://minimoon.game/og-image.png',
+        url: 'https://mini-moon-ten.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'MiniMoon Game',
@@ -61,7 +63,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'MiniMoon - Pokemon Meta Trading Game',
     description: 'Collect, battle, and trade Pokemon-style monsters on Base Chain',
-    images: ['https://minimoon.game/og-image.png'],
+    images: ['https://mini-moon-ten.vercel.app/og-image.png'],
     creator: '@minimoon',
   },
 };
@@ -78,6 +80,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        {/* Base Mini App Verification */}
+        <meta name="base:app_id" content="6980b7dbc6a03f3fe39cb88a" />
+      </head>
       <body
         className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}
       >
@@ -85,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
             <Navigation />
             <main>{children}</main>
+            <FloatingBot />
           </div>
         </Providers>
       </body>

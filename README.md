@@ -592,6 +592,84 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 🚀 New Features (v2.0)
+
+### 💼 User Inventory System
+- View all Pokemon/winnings in one place
+- Filter by rarity (Common → Mythic)
+- See power levels, wins, and statistics
+- Quick actions: Battle, Upgrade, Sell
+- Shiny indicator for rare finds
+
+### 🔗 Wallet Connection Modes
+- **Auto Mode**: Automatic detection for Base Mini App context
+- **Manual Mode**: User decides when to connect with real Base holdings
+- Chain indicator showing current network (Base ETH)
+- Seamless switching between modes
+
+### 🪙 Real $MNMOON Token Integration
+- Native integration with Streme.fun
+- Token contract: `0x184f03750171f9eF32B6267271a7FEE59cb5F387`
+- Real-time price and market data
+- Staking rewards with APY up to 50%
+- Portfolio value tracking
+
+### 🏆 Real Prize System
+**Weekly Power Rankings:**
+| Place | Prize |
+|-------|-------|
+| 🥇 1st | $50 USDC |
+| 🥈 2nd | $25 USDC |
+| 🥉 3rd | Free Hatch + 1 Mythic + 24h Premium |
+
+**Task Rewards Pool:**
+- Weekly 50,000 $MNMOON rewards pool
+- Top 3 weekly task completers get bonus rewards
+
+### ⏱️ Real-Time Features
+- Auto-refresh rankings every 30 seconds
+- Countdown timer for next refresh
+- Manual refresh option
+- User search by wallet address, FID, or FarCaster name
+- Instant search results
+
+### 🎮 Floating Mini Moon Bot
+- AI-powered assistant with context awareness
+- Shows real-time user stats (power, tokens, monsters, wins)
+- Quick actions: Check Balance, Battle Stats, My Rank, Daily Rewards
+- Smart responses about game mechanics
+
+### 📊 Real Holdings Display
+- Native Base ETH balance
+- $MNMOON token balance from chain
+- Total portfolio value
+- Quick links to Basescan for verification
+- Real-time price updates
+
+### ✨ Rarity Effects
+Each Pokemon rarity has unique visual effects:
+- **Common**: Standard glow
+- **Uncommon**: Green shimmer
+- **Rare**: Blue aura
+- **Epic**: Purple energy
+- **Legendary**: Golden radiating effect
+- **Mythic**: Pulsing pink/red animation with particle effects
+
+### 📤 Auto-Share Score
+- One-click share to FarCaster with proper URL (https://mini-moon-ten.vercel.app)
+- Twitter/X sharing with preview
+- Copy score to clipboard
+- Tag @maliotsol automatically
+- Verification for completed shares
+
+### 📅 24-Hour Task Refresh
+- Tasks reset every 24 hours
+- Countdown timer showing next refresh
+- Prevent double collection
+- Progressive rewards for streaks
+
+---
+
 ### 🤝 Want to Sponsor?
 
 <a href="mailto:sponsors@minimoon.game" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #f59e0b, #ec4899); color: white; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;">

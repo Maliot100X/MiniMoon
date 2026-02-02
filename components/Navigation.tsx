@@ -1,28 +1,70 @@
 'use client';
 
-import { useAccount, useDisconnect, useConnect } from 'wagmi';
-import { Loader2, Wallet, LogOut, Copy, Check, ChevronDown, RefreshCw, Link2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId } from 'wagmi';
+import { Loader2, Wallet, LogOut, Copy, Check, ChevronDown, RefreshCw, Link2, Shield, Smartphone } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// Base chain ID
+const BASE_CHAIN_ID = 8453;
+
+// Check if running in Base Mini App context
+const isBaseMiniApp = typeof window !== 'undefined' && (
+  window.location.search.includes('mini_app=true') ||
+  (typeof window.location.hostname !== 'undefined' && window.location.hostname.includes('base.org')) ||
+  navigator.userAgent.includes('BaseWallet') ||
+  navigator.userAgent.includes(' Coinbase Wallet')
+);
+
 export function Navigation() {
-  const { address, isConnected, isConnecting, chainId } = useAccount();
+  const { address, isConnected, isConnecting, chainId, chain } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect, connectors } = useConnect();
+  const { switchChain } = useSwitchChain();
+  const currentChainId = useChainId();
+  
   const [copied, setCopied] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'synced' | 'error'>('idle');
+  const [connectionMode, setConnectionMode] = useState<'auto' | 'manual'>('manual');
+  const [showBaseWarning, setShowBaseWarning] = useState(false);
   const pathname = usePathname();
+
+  // Auto-detect Base mini app context
+  useEffect(() => {
+    if (isBaseMiniApp) {
+      setConnectionMode('auto');
+      setShowBaseWarning(true);
+      // Auto-connect if in Base mini app
+      if (!isConnected) {
+        const baseConnector = connectors.find(c => 
+          c.id === 'io.metamask' || 
+          c.id === 'com.coinbase.wallet' ||
+          c.name?.includes('Base')
+        );
+        if (baseConnector) {
+          connect({ connector: baseConnector });
+        }
+      }
+    }
+  }, [isBaseMiniApp, isConnected, connectors, connect]);
+
+  // Ensure on Base chain when connected
+  useEffect(() => {
+    if (isConnected && currentChainId !== BASE_CHAIN_ID) {
+      switchChain({ chainId: BASE_CHAIN_ID });
+    }
+  }, [isConnected, currentChainId, switchChain]);
 
   // Auto-sync wallet on connection
   useEffect(() => {
     if (isConnected && address) {
       setSyncStatus('synced');
-      console.log('Wallet synced:', address);
+      console.log('Wallet synced:', address, 'Chain:', chainId);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, chainId]);
 
   const copyAddress = async () => {
     if (address) {
@@ -46,12 +88,39 @@ export function Navigation() {
     
     if (address) {
       setSyncStatus('synced');
-      // Post to FarCaster (would integrate with Neycast API)
       console.log('Synced wallet holdings:', address);
     }
     
     setSyncing(false);
   };
+
+  // Switch connection mode
+  const toggleConnectionMode = useCallback(() => {
+    if (connectionMode === 'manual') {
+      setConnectionMode('auto');
+      setShowBaseWarning(true);
+    } else {
+      setConnectionMode('manual');
+      setShowBaseWarning(false);
+    }
+  }, [connectionMode]);
+
+  // Connect to Base manually
+  const connectToBase = useCallback(() => {
+    const baseConnector = connectors.find(c => 
+      c.id === 'io.metamask' || 
+      c.id === 'com.coinbase.wallet' ||
+      c.name?.includes('Base Wallet')
+    );
+    if (baseConnector) {
+      connect({ connector: baseConnector });
+    } else {
+      // Fallback to first available connector
+      if (connectors[0]) {
+        connect({ connector: connectors[0] });
+      }
+    }
+  }, [connectors, connect]);
 
   // Main 5 tabs
   const mainTabs = [
@@ -75,6 +144,19 @@ export function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/90 backdrop-blur-lg">
+      {/* Base Mini App Warning Banner */}
+      {showBaseWarning && connectionMode === 'auto' && (
+        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 px-4 py-2 text-center text-xs text-white">
+          <span className="font-medium">🔗 Base Mini App Mode:</span> Your wallet connection is synced with Base. {' '}
+          <button
+            onClick={() => setShowBaseWarning(false)}
+            className="underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="mx-auto max-w-full px-3 sm:px-4">
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
@@ -168,6 +250,34 @@ export function Navigation() {
 
           {/* Wallet Connection + Sync Button */}
           <div className="flex items-center space-x-2">
+            {/* Base Mini App Mode Toggle */}
+            <button
+              onClick={toggleConnectionMode}
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                connectionMode === 'auto'
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  : 'bg-slate-800/50 text-gray-400 border-white/10 hover:text-white'
+              }`}
+              title={connectionMode === 'auto' ? 'Auto-detect Base Mini App' : 'Manual connection mode'}
+            >
+              <Smartphone className="h-3 w-3" />
+              <span className="hidden sm:inline">
+                {connectionMode === 'auto' ? 'Auto' : 'Manual'}
+              </span>
+            </button>
+
+            {/* Base Chain Indicator */}
+            {isConnected && (
+              <div className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs ${
+                currentChainId === BASE_CHAIN_ID
+                  ? 'bg-green-500/20 text-green-400'
+                  : 'bg-yellow-500/20 text-yellow-400'
+              }`}>
+                <Shield className="h-3 w-3" />
+                <span className="hidden sm:inline">Base</span>
+              </div>
+            )}
+
             {/* FarCaster Sync Button */}
             <button
               onClick={handleSync}
@@ -209,7 +319,7 @@ export function Navigation() {
                   onClick={copyAddress}
                   className="flex items-center space-x-1 rounded-full bg-slate-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 transition-colors"
                 >
-                  <div className={`h-2 w-2 rounded-full ${chainId === 8453 ? 'bg-blue-500' : 'bg-yellow-500'}`} />
+                  <div className={`h-2 w-2 rounded-full ${currentChainId === BASE_CHAIN_ID ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                   <span className="hidden sm:inline">{formatAddress(address)}</span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-500" />
@@ -226,10 +336,7 @@ export function Navigation() {
               </div>
             ) : (
               <button
-                onClick={() => {
-                  const connector = connectors[0];
-                  if (connector) connect({ connector });
-                }}
+                onClick={connectToBase}
                 disabled={isConnecting}
                 className="flex items-center space-x-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
               >
@@ -238,7 +345,7 @@ export function Navigation() {
                 ) : (
                   <Wallet className="h-4 w-4" />
                 )}
-                <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect'}</span>
+                <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
               </button>
             )}
           </div>

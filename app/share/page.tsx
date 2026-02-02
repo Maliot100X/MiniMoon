@@ -158,22 +158,47 @@ export default function SharePage() {
   };
 
   const shareToFarCaster = () => {
-    // Generate share text
-    const shareText = `🎮 Playing MiniMoon on Base!\n\n🐉 My Stats:\n⚔️ Power: 8,450\n🏆 Arena Wins: 156\n🥚 Mythics Found: 3\n\nJoin me at: https://minimoon.game\n\n#MiniMoon #Base #Web3Gaming @maliotsol`;
-    
+    // Generate share text with proper URL
+    const shareText = `🎮 Playing MiniMoon on Base!
+
+🐉 My Stats:
+⚔️ Power: 8,450
+🏆 Arena Wins: 156
+🥚 Mythics Found: 3
+
+Join me at: https://mini-moon-ten.vercel.app
+
+#MiniMoon #Base #Web3Gaming @maliotsol`;
+
     // In production, this would use Neycast API to post directly
     const castUrl = `https://farcaster.xyz/?text=${encodeURIComponent(shareText)}`;
     window.open(castUrl, '_blank');
   };
 
   const shareToTwitter = () => {
-    const shareText = `🎮 Playing MiniMoon on Base!\n\nMy Stats:\n⚔️ Power: 8,450\n🏆 Arena Wins: 156\n🥚 Mythics Found: 3\n\nJoin me: https://minimoon.game\n\n#MiniMoon #Base #Web3Gaming`;
+    const shareText = `🎮 Playing MiniMoon on Base!
+
+My Stats:
+⚔️ Power: 8,450
+🏆 Arena Wins: 156
+🥚 Mythics Found: 3
+
+Join me: https://mini-moon-ten.vercel.app
+
+#MiniMoon #Base #Web3Gaming @maliotsol`;
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
     window.open(tweetUrl, '_blank');
   };
 
   const copyScore = async () => {
-    const scoreText = `🎮 MiniMoon Stats\n⚔️ Power: 8,450\n🏆 Arena: 156-42\n🥚 Mythics: 3\n\nJoin me at https://minimoon.game`;
+    const scoreText = `🎮 MiniMoon Stats
+⚔️ Power: 8,450
+🏆 Arena: 156-42
+🥚 Mythics: 3
+
+Join me at https://mini-moon-ten.vercel.app
+
+@maliotsol`;
     await navigator.clipboard.writeText(scoreText);
     alert('Score copied to clipboard!');
   };

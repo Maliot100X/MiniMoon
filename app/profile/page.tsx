@@ -1,17 +1,75 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { useAccount } from 'wagmi';
-import { Settings, Copy, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAccount, useBalance, useReadContract } from 'wagmi';
+import { Settings, Copy, ExternalLink, Wallet, TrendingUp, DollarSign } from 'lucide-react';
+import Inventory from '@/components/Inventory';
+import { formatEther, formatUnits } from 'viem';
+
+// $MNMOON Token contract on Base
+const MNMOON_TOKEN_ADDRESS = '0x184f03750171f9eF32B6267271a7FEE59cb5F387';
+
+// Token ABI for balanceOf
+const TOKEN_ABI = [
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'totalSupply',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
+
+interface TokenHolding {
+  symbol: string;
+  name: string;
+  address: string;
+  balance: string;
+  value: number;
+  price: number;
+  icon: string;
+}
 
 export default function ProfilePage() {
   const { isConnected, address } = useAccount();
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState('Playing MiniMoon on Base | Pokemon Trainer | Web3 Gamer');
-  const [selectedAvatar, setSelectedAvatar] = useState(6); // Charizard default
+  const [selectedAvatar, setSelectedAvatar] = useState(6);
   const [selectedBackground, setSelectedBackground] = useState(0);
+  const [holdings, setHoldings] = useState<TokenHolding[]>([]);
+  const [loadingHoldings, setLoadingHoldings] = useState(false);
+  const [showHoldings, setShowHoldings] = useState(false);
+
+  // Get native token balance (ETH on Base)
+  const { data: ethBalance } = useBalance({
+    address,
+    chainId: 8453, // Base chain ID
+  });
+
+  // Read $MNMOON balance from contract
+  const { data: mnmoonBalance } = useReadContract({
+    address: MNMOON_TOKEN_ADDRESS,
+    abi: TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && isConnected,
+    },
+  });
+
+  // Calculate total portfolio value
+  const totalValue = holdings.reduce((sum, h) => sum + h.value, 0) +
+    (ethBalance ? parseFloat(ethBalance.formatted) * 3000 : 0) + // ETH ~$3000
+    (mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)) * 0.015 : 0); // $MNMOON ~$0.015
 
   // User profile data
   const profile = {
@@ -298,6 +356,142 @@ export default function ProfilePage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Real Holdings Display */}
+        {isConnected && address && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8 rounded-2xl bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-indigo-400" />
+                Real Holdings on Base
+              </h2>
+              <button
+                onClick={() => setShowHoldings(!showHoldings)}
+                className="px-4 py-2 rounded-lg bg-indigo-500/20 text-indigo-400 text-sm font-medium hover:bg-indigo-500/30 transition-colors"
+              >
+                {showHoldings ? 'Hide' : 'Show'} Holdings
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showHoldings && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  {/* Total Portfolio Value */}
+                  <div className="mb-6 p-4 rounded-xl bg-black/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                          <DollarSign className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-400">Total Portfolio Value</div>
+                          <div className="text-2xl font-bold text-white">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-green-400">
+                        <TrendingUp className="h-5 w-5" />
+                        <span className="font-medium">+12.5%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Token Holdings Grid */}
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {/* Native ETH Balance */}
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/10">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl">
+                        Ξ
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400">Base ETH</div>
+                        <div className="text-lg font-bold text-white">
+                          {ethBalance ? parseFloat(ethBalance.formatted).toFixed(4) : '0.0000'} ETH
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ~${ethBalance ? (parseFloat(ethBalance.formatted) * 3000).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* $MNMOON Token */}
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-amber-500/30">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                        <Image
+                          src="https://cdn.streme.fun/images/tokens/0x184f03750171f9eF32B6267271a7FEE59cb5F387.png"
+                          alt="$MNMOON"
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400">$MNMOON</div>
+                        <div className="text-lg font-bold text-white">
+                          {mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ~${mnmoonBalance ? (parseFloat(formatEther(mnmoonBalance as bigint)) * 0.015).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                      <a
+                        href={`https://basescan.org/token/${MNMOON_TOKEN_ADDRESS}?a=${address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                      </a>
+                    </div>
+
+                    {/* More tokens placeholder */}
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/10 opacity-60">
+                      <div className="h-12 w-12 rounded-xl bg-slate-700 flex items-center justify-center text-xl">
+                        +{/* Add more tokens here */}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400">More Tokens</div>
+                        <div className="text-lg font-bold text-white">Coming Soon</div>
+                        <div className="text-xs text-gray-500">Connect to see all holdings</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* View on Explorer */}
+                  <div className="mt-4 flex justify-end">
+                    <a
+                      href={`https://basescan.org/address/${address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      View all on Basescan
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Inventory Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <Inventory showHeader={true} />
+        </motion.div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Achievements */}
