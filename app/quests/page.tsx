@@ -262,14 +262,14 @@ export default function QuestsPage() {
                 {/* Claim Button */}
                 <button
                   onClick={() => handleClaim(quest.id)}
-                  disabled={claiminging || quest.progress < quest.target}
+                  disabled={!!claiming || quest.progress < quest.target}
                   className={`mt-4 w-full rounded-lg py-3 font-bold transition-all ${
                     quest.progress >= quest.target
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:opacity-90'
                       : 'bg-slate-700 text-gray-400 cursor-not-allowed'
                   } disabled:opacity-50`}
                 >
-                  {claiminging === quest.id ? (
+                  {claiming === quest.id ? (
                     <span className="flex items-center justify-center space-x-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Claiming...</span>
@@ -349,14 +349,14 @@ export default function QuestsPage() {
                 {/* Claim Button */}
                 <button
                   onClick={() => handleClaim(quest.id)}
-                  disabled={claiminging || quest.progress < quest.target}
+                  disabled={!!claiming || quest.progress < quest.target}
                   className={`mt-6 w-full rounded-lg py-3 font-bold transition-all ${
                     quest.progress >= quest.target
                       ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:opacity-90'
                       : 'bg-slate-700 text-gray-400 cursor-not-allowed'
                   } disabled:opacity-50`}
                 >
-                  {claiminging === quest.id ? (
+                  {claiming === quest.id ? (
                     <span className="flex items-center justify-center space-x-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Claiming...</span>

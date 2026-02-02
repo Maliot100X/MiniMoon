@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![MiniMoon Logo](https://via.placeholder.com/200x200/f59e0b/ffffff?text=M)
+# 🌙 MiniMoon
 
 **Collect. Battle. Conquer.**
 
@@ -11,6 +11,78 @@ A Pokemon-style Meta Trading Game built on Base Chain with blockchain integratio
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Base](https://img.shields.io/badge/Chain-Base-blue.svg)](https://base.org)
 [![Next.js](https://img.shields.io/badge/Framework-Next.js-black.svg)](https://nextjs.org/)
+[![Web3](https://img.shields.io/badge/Web3-Wagmi-blueviolet.svg)](https://wagmi.sh/)
+
+---
+
+## 🏆 Sponsored By
+
+<div align="center">
+
+### 🏛️ Large Enterprises
+
+[<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/stripe/stripe-original.svg" width="60" height="60" alt="Stripe" />](https://stripe.com)
+[<img src="https://cryptologos.cc/logos/zksync-zk-logo.png" width="60" height="60" alt="zkSync" />](https://zksync.io)
+[<img src="https://cryptologos.cc/logos/linea-lna-logo.png" width="60" height="60" alt="Linea" />](https://linea.build)
+[<img src="https://cryptologos.cc/logos/gemini-gem-logo.png" width="60" height="60" alt="Gemini" />](https://gemini.com)
+
+### 🚀 Collaborators
+
+[<img src="https://cryptologos.cc/logos/paradigm-paradigm-logo.png" width="60" height="60" alt="Paradigm" />](https://paradigm.xyz)
+[<img src="https://cryptologos.cc/logos/ithaca-ithaca-logo.png" width="60" height="60" alt="Ithaca" />](https://ithaca.xyz)
+
+### 🌟 Infrastructure & Tools
+
+[<img src="https://cryptologos.cc/logos/walletconnect-wc-logo.png" width="60" height="60" alt="WalletConnect" />](https://walletconnect.com)
+[<img src="https://cryptologos.cc/logos/uniswap-uni-logo.png" width="60" height="60" alt="Uniswap" />](https://uniswap.org)
+[<img src="https://cryptologos.cc/logos/sushiswap-sushi-logo.png" width="60" height="60" alt="SushiSwap" />](https://sushi.com)
+[<img src="https://cryptologos.cc/logos/pancakeswap-cake-logo.png" width="60" height="60" alt="PancakeSwap" />](https://pancakeswap.finance)
+[<img src="https://cryptologos.cc/logos/celo-celo-logo.png" width="60" height="60" alt="Celo" />](https://celo.org)
+
+### 💼 DeFi & Protocols
+
+[<img src="https://cryptologos.cc/logos/reservoir-rsv-logo.png" width="60" height="60" alt="Reservoir" />](https://reservoir.tools)
+[<img src="https://cryptologos.cc/logos/zora-zora-logo.png" width="60" height="60" alt="Zora" />](https://zora.co)
+[<img src="https://cryptologos.cc/logos/biconomy-bico-logo.png" width="60" height="60" alt="Biconomy" />](https://biconomy.io)
+[<img src="https://cryptologos.cc/logos/sequence-seq-logo.png" width="60" height="60" alt="Sequence" />](https://sequence.xyz)
+[<img src="https://cryptologos.cc/logos/routescan-rts-logo.png" width="60" height="60" alt="Routescan" />](https://routescan.io)
+
+### 🎮 Gaming & NFT
+
+[<img src="https://cryptologos.cc/logos/partydao-party-logo.png" width="60" height="60" alt="PartyDAO" />](https://partydao.org)
+[<img src="https://cryptologos.cc/logos/thirdweb-third-logo.png" width="60" height="60" alt="Thirdweb" />](https://thirdweb.com)
+[<img src="https://cryptologos.cc/logos/polymarket-pmkt-logo.png" width="60" height="60" alt="Polymarket" />](https://polymarket.com)
+
+### 🔐 Wallets & Auth
+
+[<img src="https://cryptologos.cc/logos/rainbow-rainbow-logo.png" width="60" height="60" alt="Rainbow" />](https://rainbow.me)
+[<img src="https://cryptologos.cc/logos/privy-privy-logo.png" width="60" height="60" alt="Privy" />](https://privy.io)
+[<img src="https://cryptologos.cc/logos/pimlico-pim-logo.png" width="60" height="60" alt="Pimlico" />](https://pimlico.io)
+[<img src="https://cryptologos.cc/logos/dynamic-dyn-logo.png" width="60" height="60" alt="Dynamic" />](https://dynamic.xyz)
+
+### 🏗️ Development
+
+[<img src="https://cryptologos.cc/logos/lattice-lattice-logo.png" width="60" height="60" alt="Lattice" />](https://lattice.xyz)
+[<img src="https://cryptologos.cc/logos/supa-supa-logo.png" width="60" height="60" alt="Supa" />](https://supabase.com)
+[<img src="https://cryptologos.cc/logos/syndicate-syndicate-logo.png" width="60" height="60" alt="Syndicate" />](https://syndicate.io)
+
+### 🤝 Community
+
+<div>
+
+**Family** · **Context** · **Large Enterprises** · **Small Enterprises**
+
+</div>
+
+---
+
+<a href="https://vercel.com?utm_source=minimoon&utm_campaign=oss" target="_blank">
+<img src="https://raw.githubusercontent.com/vercel/vercel/main/packages/frameworks/next.js/nextjs-light.svg" width="140" alt="Powered by Vercel" />
+</a>
+
+---
+
+*Want to sponsor MiniMoon?* [**Become a sponsor →**](https://github.com/sponsors/Maliot100X)
 
 </div>
 
@@ -222,11 +294,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [OpenZeppelin](https://openzeppelin.com) - Smart contract security
 - [Wagmi](https://wagmi.sh) - React hooks for Ethereum
 - [Clankermon](https://clankermon.com) - Inspiration for the game mechanics
+- All our amazing sponsors and collaborators!
 
 ---
 
 <div align="center">
 
 **Built with ❤️ on Base**
+
+**MiniMoon** © 2026
 
 </div>

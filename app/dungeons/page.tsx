@@ -54,7 +54,7 @@ const dungeons = [
     winRate: 65,
     rewards: '500-2,500 $MNMOON',
     color: 'from-blue-500 to-blue-600',
-    monsters: 'Crystal Golem, Ice Wolf, Electric Eel',
+    monsters: ['Crystal Golem', 'Ice Wolf', 'Electric Eel'],
   },
   {
     id: 4,
@@ -67,7 +67,7 @@ const dungeons = [
     winRate: 50,
     rewards: '1,500-5,000 $MNMOON',
     color: 'from-orange-500 to-red-600',
-    monsters: 'Fire Dragon, Magma Beast, Phoenix',
+    monsters: ['Fire Dragon', 'Magma Beast', 'Phoenix'],
   },
   {
     id: 5,
@@ -80,7 +80,7 @@ const dungeons = [
     winRate: 30,
     rewards: '5,000-20,000 $MNMOON',
     color: 'from-purple-600 to-black',
-    monsters: 'Shadow Lord, Void Dragon, Dark Phoenix',
+    monsters: ['Shadow Lord', 'Void Dragon', 'Dark Phoenix'],
   },
 ];
 
@@ -195,12 +195,12 @@ export default function DungeonsPage() {
                 <div className="mt-6">
                   <div className="text-sm text-gray-400">Encounters:</div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {dungeon.monsters.split(',').map((monster) => (
+                    {dungeon.monsters.map((monster) => (
                       <span
                         key={monster}
                         className="rounded-full bg-white/10 px-3 py-1 text-sm text-gray-300"
                       >
-                        {monster.trim()}
+                        {monster}
                       </span>
                     ))}
                   </div>

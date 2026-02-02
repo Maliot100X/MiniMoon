@@ -1,9 +1,8 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
+import { WagmiProvider, createConfig, http, cookieStorage, createStorage } from 'wagmi';
 import { createWeb3Modal } from '@web3modal/wagmi/react';
-import { http, cookieStorage, createStorage } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { useState, useEffect } from 'react';
 
@@ -18,6 +17,18 @@ const metadata = {
 
 const chains = [base, baseSepolia] as const;
 
+export const wagmiConfig = createConfig({
+  chains,
+  transports: {
+    [base.id]: http(),
+    [baseSepolia.id]: http(),
+  },
+  ssr: true,
+  storage: createStorage({
+    storage: cookieStorage,
+  }),
+});
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -28,39 +39,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     },
   }));
 
-  const [wagmiConfig] = useState(() => {
-    const config = {
-      chains,
-      transports: {
-        [base.id]: http(),
-        [baseSepolia.id]: http(),
-      },
-      ssr: true,
-      storage: createStorage({
-        storage: cookieStorage,
-      }),
-    };
-    return config;
-  });
-
   useEffect(() => {
-    if (projectId) {
+    if (projectId && typeof window !== 'undefined') {
       createWeb3Modal({
         wagmiConfig,
         projectId,
-        chains,
-        metadata,
-        enableAnalytics: true,
-        themeMode: 'dark',
-        themeVariables: {
-          '--w3m-color-primary': '#f59e0b',
-          '--w3m-color-accent': '#ec4899',
-          '--w3m-font-family': 'Inter, sans-serif',
-          '--w3m-border-radius': '12px',
-        },
       });
     }
-  }, [wagmiConfig, projectId]);
+  }, []);
 
   return (
     <WagmiProvider config={wagmiConfig}>
