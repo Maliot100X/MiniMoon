@@ -4,8 +4,31 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, TrendingUp, Clock, Shield, Zap, ExternalLink, RefreshCw, Wallet, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
-import { useAccount } from 'wagmi';
+import Image from 'next/image';
+import { useAccount, useBalance, useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
 
+// $MNMOON Token contract on Base
+const MNMOON_TOKEN_ADDRESS = '0x184f03750171f9eF32B6267271a7FEE59cb5F387';
+
+const TOKEN_ABI = [
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'totalSupply',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
+
+// EXACT Streme.fun format
 const COIN_INFO = {
   name: '$MNMOON',
   symbol: 'MNMOON',
@@ -14,6 +37,7 @@ const COIN_INFO = {
   price: 0.015,
   marketCap: 15000000,
   holders: 12500,
+  tvl: 16550000,
   launchDate: '2024-12-01',
 };
 
@@ -24,7 +48,7 @@ const STAKING_POOLS = [
     apy: 5,
     minStake: 100,
     lockPeriod: 0,
-    rewards: 'Instant',
+    rewards: 'Instant Rewards',
     color: 'from-green-500 to-emerald-500',
     tvl: 1250000,
     description: 'No lock period, withdraw anytime',
@@ -35,7 +59,7 @@ const STAKING_POOLS = [
     apy: 12,
     minStake: 500,
     lockPeriod: 7,
-    rewards: 'Daily',
+    rewards: 'Daily Rewards',
     color: 'from-blue-500 to-cyan-500',
     tvl: 2800000,
     description: 'Higher rewards with 7-day lock',
@@ -46,7 +70,7 @@ const STAKING_POOLS = [
     apy: 25,
     minStake: 2000,
     lockPeriod: 30,
-    rewards: 'Daily',
+    rewards: 'Daily Rewards',
     color: 'from-purple-500 to-pink-500',
     tvl: 4500000,
     description: 'Best APY with 30-day lock',
@@ -57,7 +81,7 @@ const STAKING_POOLS = [
     apy: 50,
     minStake: 10000,
     lockPeriod: 90,
-    rewards: 'Instant + Bonus',
+    rewards: 'Instant + Bonus Rewards',
     color: 'from-amber-500 to-orange-500',
     tvl: 8000000,
     description: 'Maximum rewards for big stakers',
@@ -71,13 +95,32 @@ export default function StakingPage() {
   const [stakingRewards, setStakingRewards] = useState(0.4567);
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [stakeAmount, setStakeAmount] = useState('');
-  const [totalTVL, setTotalTVL] = useState(16550000);
+
+  // Get native ETH balance
+  const { data: ethBalance } = useBalance({
+    address,
+    chainId: 8453,
+  });
+
+  // Get $MNMOON balance from contract
+  const { data: mnmoonBalance } = useReadContract({
+    address: MNMOON_TOKEN_ADDRESS,
+    abi: TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+  });
+
+  // Get total supply
+  const { data: totalSupply } = useReadContract({
+    address: MNMOON_TOKEN_ADDRESS,
+    abi: TOKEN_ABI,
+    functionName: 'totalSupply',
+  });
 
   // Auto-sync wallet balance
   useEffect(() => {
     if (isConnected && address) {
       console.log('Wallet synced:', address);
-      // In production, fetch actual balance from chain
     }
   }, [isConnected, address]);
 
@@ -156,34 +199,36 @@ export default function StakingPage() {
             </div>
           </div>
 
-          {/* Coin Info Banner */}
+          {/* EXACT Streme.fun Coin Info Format */}
           <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-pink-500/20 rounded-2xl p-6 border border-amber-500/30">
             <div className="flex flex-wrap items-center justify-between gap-6">
+              {/* Left: Icon and Name */}
               <div className="flex items-center space-x-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">M</span>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{COIN_INFO.name}</h2>
-                  <p className="text-gray-400">{COIN_INFO.symbol} Token</p>
+                  <h2 className="text-2xl font-bold text-white">$MNMOON</h2>
+                  <p className="text-gray-400">MNMOON Token</p>
                 </div>
               </div>
 
+              {/* Right: Stats Grid */}
               <div className="flex flex-wrap gap-6 text-center">
                 <div>
-                  <p className="text-3xl font-bold text-amber-400">${COIN_INFO.price}</p>
+                  <p className="text-2xl font-bold text-green-400">${COIN_INFO.price.toFixed(3)}</p>
                   <p className="text-xs text-gray-400">Price</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-green-400">${formatNumber(COIN_INFO.marketCap)}</p>
+                  <p className="text-2xl font-bold text-blue-400">${formatNumber(COIN_INFO.marketCap)}</p>
                   <p className="text-xs text-gray-400">Market Cap</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-blue-400">{formatNumber(COIN_INFO.holders)}</p>
+                  <p className="text-2xl font-bold text-purple-400">{formatNumber(COIN_INFO.holders)}</p>
                   <p className="text-xs text-gray-400">Holders</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-purple-400">{formatNumber(totalTVL)}</p>
+                  <p className="text-2xl font-bold text-cyan-400">{formatNumber(COIN_INFO.tvl)}</p>
                   <p className="text-xs text-gray-400">TVL</p>
                 </div>
               </div>
@@ -365,7 +410,7 @@ export default function StakingPage() {
                           ? 'bg-green-500/20 text-green-400' 
                           : 'bg-blue-500/20 text-blue-400'
                       }`}>
-                        {pool.rewards} Rewards
+                        {pool.rewards}
                       </span>
                     </div>
                   </button>

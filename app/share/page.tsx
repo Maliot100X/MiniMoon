@@ -95,7 +95,6 @@ export default function SharePage() {
   const { isConnected, address } = useAccount();
   const [tasks, setTasks] = useState<ShareTask[]>(TASKS);
   const [verifying, setVerifying] = useState<string | null>(null);
-  const [showCastPreview, setShowCastPreview] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
   const [dailyRefresh, setDailyRefresh] = useState(0);
 
@@ -142,15 +141,9 @@ export default function SharePage() {
     // Simulate verification process
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // In production, this would:
-    // 1. Check if user performed the action (API calls to Twitter/Farcaster/GitHub)
-    // 2. Verify using Neycast API for FarCaster
-    // 3. Check Twitter API for tweets/follows
-    // 4. Check GitHub API for stars/forks
-    
     setTasks(prev => prev.map(t => 
       t.id === taskId 
-        ? { ...t, status: 'completed' }
+        ? { ...t, status: 'completed'}
         : t
     ));
     
@@ -158,49 +151,19 @@ export default function SharePage() {
   };
 
   const shareToFarCaster = () => {
-    // Generate share text with proper URL
-    const shareText = `🎮 Playing MiniMoon on Base!
-
-🐉 My Stats:
-⚔️ Power: 8,450
-🏆 Arena Wins: 156
-🥚 Mythics Found: 3
-
-Join me at: https://mini-moon-ten.vercel.app
-
-#MiniMoon #Base #Web3Gaming @maliotsol`;
-
-    // In production, this would use Neycast API to post directly
-    const castUrl = `https://farcaster.xyz/?text=${encodeURIComponent(shareText)}`;
+    const castUrl = `https://farcaster.xyz/?text=${encodeURIComponent('Playing MiniMoon on Base! Join me at https://mini-moon-ten.vercel.app #MiniMoon #Base #Web3Gaming @maliotsol')}`;
     window.open(castUrl, '_blank');
   };
 
   const shareToTwitter = () => {
-    const shareText = `🎮 Playing MiniMoon on Base!
-
-My Stats:
-⚔️ Power: 8,450
-🏆 Arena Wins: 156
-🥚 Mythics Found: 3
-
-Join me: https://mini-moon-ten.vercel.app
-
-#MiniMoon #Base #Web3Gaming @maliotsol`;
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent('Playing MiniMoon on Base! Join me at https://mini-moon-ten.vercel.app #MiniMoon #Base #Web3Gaming')}`;
     window.open(tweetUrl, '_blank');
   };
 
   const copyScore = async () => {
-    const scoreText = `🎮 MiniMoon Stats
-⚔️ Power: 8,450
-🏆 Arena: 156-42
-🥚 Mythics: 3
-
-Join me at https://mini-moon-ten.vercel.app
-
-@maliotsol`;
+    const scoreText = `MiniMoon - Play at https://mini-moon-ten.vercel.app #MiniMoon #Base #Web3Gaming @maliotsol`;
     await navigator.clipboard.writeText(scoreText);
-    alert('Score copied to clipboard!');
+    alert('Copied! Connect wallet for real stats.');
   };
 
   const platformIcons = {
@@ -323,7 +286,7 @@ Join me at https://mini-moon-ten.vercel.app
                     <button
                       onClick={() => handleAction(task)}
                       disabled={task.status === 'completed'}
-                      className={`flex items-center space-x-1 px-4 py-2 rounded-lg font-boldtext-sm transition-all ${
+                      className={`flex items-center space-x-1 px-4 py-2 rounded-lg font-bold text-sm transition-all ${
                         task.status === 'completed'
                           ? 'bg-slate-700 text-gray-500 cursor-not-allowed'
                           : `bg-gradient-to-r ${platformColors[task.platform]} text-white hover:opacity-90`
