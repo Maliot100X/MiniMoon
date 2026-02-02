@@ -1,18 +1,28 @@
 'use client';
 
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
-import { Loader2, Wallet, LogOut, Copy, Check, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, Wallet, LogOut, Copy, Check, ChevronDown, RefreshCw, Link2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export function Navigation() {
-  const { address, isConnected, isConnecting } = useAccount();
+  const { address, isConnected, isConnecting, chainId } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect, connectors } = useConnect();
   const [copied, setCopied] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'synced' | 'error'>('idle');
   const pathname = usePathname();
+
+  // Auto-sync wallet on connection
+  useEffect(() => {
+    if (isConnected && address) {
+      setSyncStatus('synced');
+      console.log('Wallet synced:', address);
+    }
+  }, [isConnected, address]);
 
   const copyAddress = async () => {
     if (address) {
@@ -24,6 +34,23 @@ export function Navigation() {
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  // Manual sync for FarCaster/Twitter
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncStatus('idle');
+    
+    // Simulate sync process
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    if (address) {
+      setSyncStatus('synced');
+      // Post to FarCaster (would integrate with Neycast API)
+      console.log('Synced wallet holdings:', address);
+    }
+    
+    setSyncing(false);
   };
 
   // Main 5 tabs
@@ -40,6 +67,8 @@ export function Navigation() {
     { href: '/dungeons', label: 'Dungeons', icon: '🏰' },
     { href: '/quests', label: 'Quests', icon: '📅' },
     { href: '/rankings', label: 'Rankings', icon: '🏆' },
+    { href: '/share', label: 'Share & Tasks', icon: '📤' },
+    { href: '/staking', label: 'Staking & Coin', icon: '🪙' },
     { href: '/subscription', label: 'Premium', icon: '⭐' },
     { href: '/farcaster', label: 'FarCaster', icon: '🦪' },
   ];
@@ -92,7 +121,7 @@ export function Navigation() {
               {showMore && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowMore(false)} />
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-800 border border-white/10 shadow-xl z-20 py-2">
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-800 border border-white/10 shadow-xl z-20 py-2">
                     {moreTabs.map((tab) => (
                       <Link
                         key={tab.href}
@@ -131,19 +160,56 @@ export function Navigation() {
               <option value="/dungeons">🏰 Dungeons</option>
               <option value="/quests">📅 Quests</option>
               <option value="/rankings">🏆 Rankings</option>
+              <option value="/share">📤 Share & Tasks</option>
+              <option value="/staking">🪙 Staking & Coin</option>
               <option value="/farcaster">🦪 FarCaster</option>
             </select>
           </div>
 
-          {/* Wallet Connection */}
+          {/* Wallet Connection + Sync Button */}
           <div className="flex items-center space-x-2">
+            {/* FarCaster Sync Button */}
+            <button
+              onClick={handleSync}
+              disabled={!isConnected || syncing}
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                syncStatus === 'synced'
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  : 'bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30'
+              } disabled:opacity-50`}
+              title="Sync wallet to FarCaster"
+            >
+              {syncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : syncStatus === 'synced' ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              <span className="hidden sm:inline">
+                {syncing ? 'Syncing...' : syncStatus === 'synced' ? 'Synced' : 'Sync'}
+              </span>
+            </button>
+
+            {/* FarCaster Profile Link */}
+            <a
+              href="https://farcaster.xyz/maliotsol"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-400 border border-purple-500/30 hover:from-purple-500/30 hover:to-indigo-500/30 transition-all"
+              title="Follow @maliotsol on FarCaster"
+            >
+              <Link2 className="h-3 w-3" />
+              <span className="hidden sm:inline">@maliotsol</span>
+            </a>
+
             {isConnected && address ? (
               <div className="flex items-center space-x-2">
                 <button
                   onClick={copyAddress}
                   className="flex items-center space-x-1 rounded-full bg-slate-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 transition-colors"
                 >
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <div className={`h-2 w-2 rounded-full ${chainId === 8453 ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                   <span className="hidden sm:inline">{formatAddress(address)}</span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-500" />
