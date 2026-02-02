@@ -4,11 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID": "@wallet_connect_project_id",
-    "NEXT_PUBLIC_BASE_RPC_URL": "https://mainnet.base.org",
-    "NEXT_PUBLIC_BASESCAN_URL": "https://basescan.org"
-  },
   "headers": [
     {
       "source": "/(.*)",

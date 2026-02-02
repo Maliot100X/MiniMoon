@@ -4,12 +4,14 @@ import { useAccount, useDisconnect, useConnect, useBalance } from 'wagmi';
 import { Loader2, Wallet, LogOut, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function Navigation() {
   const { address, isConnected, isConnecting } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect, connectors } = useConnect();
   const [copied, setCopied] = useState(false);
+  const pathname = usePathname();
 
   const copyAddress = async () => {
     if (address) {
@@ -23,9 +25,20 @@ export function Navigation() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const navLinks = [
+    { href: '/dungeons', label: '🏰 Dungeons', icon: '🏰' },
+    { href: '/arena', label: '⚔️ Arena', icon: '⚔️' },
+    { href: '/afk', label: '⏰ AFK', icon: '⏰' },
+    { href: '/quests', label: '📅 Quests', icon: '📅' },
+    { href: '/marketplace', label: '🏪 Market', icon: '🏪' },
+    { href: '/shop', label: '🛒 Shop', icon: '🛒' },
+    { href: '/rankings', label: '🏆 Rankings', icon: '🏆' },
+    { href: '/profile', label: '👤 Profile', icon: '👤' },
+  ];
+
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/80 backdrop-blur-lg">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
@@ -41,10 +54,52 @@ export function Navigation() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
-            <NavLink href="/dungeons">Dungeons</NavLink>
-            <NavLink href="/quests">Quests</NavLink>
-            <NavLink href="/marketplace">Marketplace</NavLink>
+          <div className="hidden xl:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <NavLink 
+                key={link.href} 
+                href={link.href} 
+                label={link.label}
+                active={pathname === link.href}
+              />
+            ))}
+          </div>
+
+          {/* Mobile Menu */}
+          <div className="xl:hidden">
+            <select 
+              className="bg-slate-800 text-white rounded-lg px-3 py-2 text-sm"
+              onChange={(e) => {
+                if (e.target.value) window.location.href = e.target.value;
+              }}
+              value={pathname}
+            >
+              <option value="/">Menu</option>
+              <option value="/dungeons">🏰 Dungeons</option>
+              <option value="/arena">⚔️ Arena</option>
+              <option value="/afk">⏰ AFK</option>
+              <option value="/quests">📅 Quests</option>
+              <option value="/marketplace">🏪 Market</option>
+              <option value="/shop">🛒 Shop</option>
+              <option value="/rankings">🏆 Rankings</option>
+              <option value="/profile">👤 Profile</option>
+            </select>
+          </div>
+
+          {/* Mini App Links */}
+          <div className="hidden md:flex items-center space-x-2 mr-4">
+            <a 
+              href="/farcaster"
+              className="px-3 py-1 text-xs font-medium text-purple-400 bg-purple-400/10 rounded-lg hover:bg-purple-400/20 transition-colors"
+            >
+              📱 FarCaster
+            </a>
+            <a 
+              href="/base"
+              className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-400/10 rounded-lg hover:bg-blue-400/20 transition-colors"
+            >
+              🔵 Base
+            </a>
           </div>
 
           {/* Wallet Connection */}
@@ -94,13 +149,17 @@ export function Navigation() {
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
     <Link
       href={href}
-      className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+        active 
+          ? 'text-white bg-white/10' 
+          : 'text-gray-300 hover:text-white hover:bg-white/5'
+      }`}
     >
-      {children}
+      {label}
     </Link>
   );
 }
