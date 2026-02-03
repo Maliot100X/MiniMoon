@@ -1,0 +1,17 @@
+{
+  "name": "MiniMoon",
+  "description": "Pokemon Meta Trading Game on Base Chain",
+  "icon": "https://mini-moon-ten.vercel.app/icon.png",
+  "logo": "https://mini-moon-ten.vercel.app/logo.png",
+  "version": "1.0.0",
+  "homeUrl": "https://mini-moon-ten.vercel.app",
+  "channels": {
+    "website": "https://mini-moon-ten.vercel.app",
+    "farcaster": "https://farcaster.xyz/minimoon"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE0MjgzODQsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOUQzNDkxOGVBODNjNWMwOTk2QmRCOGUzNTJDYUU0MTMxM0FEYTNDIn0",
+    "payload": "eyJkb21haW4iOiJtaW5pLW1vb24tdGVuLnZlcmNlbC5hcHAifQ",
+    "signature": "PUf6ihcdwh07sFhGOuC4KtgLOC95e1c41WfuNyM/oMVxmnAatVAYR65Zi1TzeFpp1bVNPULG4zWkWtj/6XEyPhw="
+  }
+}

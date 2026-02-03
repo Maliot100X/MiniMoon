@@ -4,23 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccount } from 'wagmi';
 
-const marketplacePokemon = [
-  { id: 6, name: 'Charizard', type: 'fire', power: 500, price: 5000, seller: 'Trainer1', rarity: 'Rare', emoji: '🔥' },
-  { id: 9, name: 'Blastoise', type: 'water', power: 500, price: 5000, seller: 'WaterPro', rarity: 'Rare', emoji: '💧' },
-  { id: 25, name: 'Pikachu', type: 'electric', power: 120, price: 500, seller: 'AshFan', rarity: 'Common', emoji: '⚡' },
-  { id: 3, name: 'Venusaur', type: 'grass', power: 500, price: 5000, seller: 'GreenThumb', rarity: 'Rare', emoji: '🌿' },
-  { id: 94, name: 'Gengar', type: 'ghost', power: 500, price: 8000, seller: 'SpookyMasta', rarity: 'Epic', emoji: '👻' },
-  { id: 149, name: 'Dragonite', type: 'dragon', power: 600, price: 15000, seller: 'DragonLord', rarity: 'Epic', emoji: '🐉' },
-  { id: 150, name: 'Mewtwo', type: 'psychic', power: 1000, price: 50000, seller: 'Legendary', rarity: 'Legendary', emoji: '🧬' },
-  { id: 282, name: 'Gardevoir', type: 'fairy', power: 450, price: 6000, seller: 'FairyQueen', rarity: 'Epic', emoji: '🧚' },
-  { id: 68, name: 'Machamp', type: 'fighting', power: 480, price: 4000, seller: 'FighterX', rarity: 'Rare', emoji: '🥊' },
-  { id: 130, name: 'Gyarados', type: 'water', power: 550, price: 7000, seller: 'SeaKing', rarity: 'Rare', emoji: '🐋' },
-  { id: 491, name: 'Darkrai', type: 'dark', power: 1100, price: 100000, seller: 'NightMare', rarity: 'Mythic', emoji: '🌑' },
-  { id: 493, name: 'Arceus', type: 'normal', power: 1500, price: 200000, seller: 'GodPokemon', rarity: 'Mythic', emoji: '⭐' },
-  { id: 384, name: 'Rayquaza', type: 'dragon', power: 1300, price: 150000, seller: 'SkyDragon', rarity: 'Mythic', emoji: '🐲' },
-  { id: 257, name: 'Blaziken', type: 'fighting', power: 550, price: 5500, seller: 'FireKick', rarity: 'Rare', emoji: '🔥' },
-];
+// Placeholder - In production, fetch from smart contract
+const marketplacePokemon: any[] = [];
 
 const shopItems = [
   { id: 'egg1', name: 'Pokemon Egg', type: 'egg', price: 100, emoji: '🥚', desc: 'Hatch a random Pokemon!', stock: 999 },
@@ -56,16 +43,17 @@ const typeColors: Record<string, { bg: string; text: string }> = {
   dark: { bg: 'bg-slate-500/20', text: 'text-slate-400' },
 };
 
-const rarityColors: Record<string, { text: string; border: string; glow: string }> = {
-  Common: { text: 'text-gray-400', border: 'border-gray-400', glow: 'shadow-gray-400/20' },
-  Uncommon: { text: 'text-green-400', border: 'border-green-400', glow: 'shadow-green-400/20' },
-  Rare: { text: 'text-blue-400', border: 'border-blue-400', glow: 'shadow-blue-400/20' },
-  Epic: { text: 'text-purple-400', border: 'border-purple-400', glow: 'shadow-purple-400/20' },
-  Legendary: { text: 'text-amber-400', border: 'border-amber-400', glow: 'shadow-amber-400/20' },
-  Mythic: { text: 'text-red-500', border: 'border-red-500', glow: 'shadow-red-500/30' },
+const rarityColors: Record<string, { text: string; border: string; glow: string; bg: string }> = {
+  Common: { text: 'text-gray-400', border: 'border-gray-400', glow: 'shadow-gray-400/20', bg: 'bg-gray-500/20' },
+  Uncommon: { text: 'text-green-400', border: 'border-green-400', glow: 'shadow-green-400/20', bg: 'bg-green-500/20' },
+  Rare: { text: 'text-blue-400', border: 'border-blue-400', glow: 'shadow-blue-400/20', bg: 'bg-blue-500/20' },
+  Epic: { text: 'text-purple-400', border: 'border-purple-400', glow: 'shadow-purple-400/20', bg: 'bg-purple-500/20' },
+  Legendary: { text: 'text-amber-400', border: 'border-amber-400', glow: 'shadow-amber-400/20', bg: 'bg-amber-500/20' },
+  Mythic: { text: 'text-red-500', border: 'border-red-500', glow: 'shadow-red-500/30', bg: 'bg-red-500/30' },
 };
 
 export default function MarketplacePage() {
+  const { isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<'marketplace' | 'shop'>('marketplace');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string | null>(null);
@@ -100,89 +88,66 @@ export default function MarketplacePage() {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   };
 
-  const types = ['fire', 'water', 'electric', 'grass', 'ice', 'dragon', 'ghost', 'fighting', 'fairy', 'psychic', 'egg', 'aura', 'boost', 'cosmetic', 'consumable', 'mystery'];
-  const rarities = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic'];
-
-  const formatPrice = (price: number) => {
-    if (price >= 1000) {
-      return `${(price / 1000).toFixed(1)}K`;
-    }
-    return price.toString();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-      <div className="bg-slate-800/50 border-b border-white/5 py-6 sticky top-14 z-40">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-white">
-              {activeTab === 'marketplace' ? '🏪 Pokemon Marketplace' : '🛒 Item Shop'}
-            </h1>
-            <Link href="/" className="text-gray-400 hover:text-white">← Back</Link>
+      <div className="bg-slate-800/50 border-b border-white/5 py-6">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center space-x-3">
+              <Link href="/" className="text-gray-400 hover:text-white">←</Link>
+              <h1 className="text-3xl font-bold text-white">🏪 Marketplace</h1>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('marketplace')}
+                className={`px-6 py-2 rounded-xl font-bold transition-all ${
+                  activeTab === 'marketplace'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                    : 'bg-slate-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                Pokemon
+              </button>
+              <button
+                onClick={() => setActiveTab('shop')}
+                className={`px-6 py-2 rounded-xl font-bold transition-all ${
+                  activeTab === 'shop'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                    : 'bg-slate-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                Shop
+              </button>
+            </div>
           </div>
 
-          <div className="flex space-x-2 mb-4">
-            <button
-              onClick={() => setActiveTab('marketplace')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === 'marketplace'
-? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                  : 'bg-slate-700 text-gray-400 hover:text-white'
-              }`}
-            >
-              🏪 Buy Pokemon
-            </button>
-            <button
-              onClick={() => setActiveTab('shop')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === 'shop'
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                  : 'bg-slate-700 text-gray-400 hover:text-white'
-              }`}
-            >
-              🛒 Item Shop
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
+          {/* Search & Filters */}
+          <div className="flex flex-wrap gap-4">
             <input
               type="text"
-              placeholder={activeTab === 'marketplace' ? 'Search Pokemon...' : 'Search items...'}
+              placeholder={`Search ${activeTab === 'marketplace' ? 'Pokemon' : 'items'}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 min-w-48 px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-gray-400 border border-white/10 focus:border-amber-500/50 focus:outline-none"
+              className="flex-1 min-w-[200px] px-4 py-2 rounded-xl bg-slate-700/50 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 border border-white/10"
             />
             <select
               value={filterType || ''}
               onChange={(e) => setFilterType(e.target.value || null)}
-              className="px-4 py-3 rounded-xl bg-slate-700/50 text-white border border-white/10 focus:border-amber-500/50 focus:outline-none"
+              className="px-4 py-2 rounded-xl bg-slate-700/50 text-white focus:outline-none border border-white/10"
             >
               <option value="">All Types</option>
-              {activeTab === 'marketplace' ? (
-                types.filter(t => !['egg', 'aura', 'boost', 'cosmetic', 'consumable', 'mystery'].includes(t)).map(type => (
-                  <option key={type} value={type}>
-                    {typeEmojis[type] || '📦'} {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="egg">🥚 Eggs</option>
-                  <option value="aura">✨ Auras</option>
-                  <option value="boost">⚡ Boosts</option>
-                  <option value="cosmetic">🎨 Cosmetics</option>
-                  <option value="consumable">💊 Consumables</option>
-                  <option value="mystery">🎁 Mystery</option>
-                </>
-              )}
+              {Object.keys(typeEmojis).map((type) => (
+                <option key={type} value={type}>{typeEmojis[type]} {type}</option>
+              ))}
             </select>
             {activeTab === 'marketplace' && (
               <select
                 value={selectedRarity || ''}
                 onChange={(e) => setSelectedRarity(e.target.value || null)}
-                className="px-4 py-3 rounded-xl bg-slate-700/50 text-white border border-white/10 focus:border-amber-500/50 focus:outline-none"
+                className="px-4 py-2 rounded-xl bg-slate-700/50 text-white focus:outline-none border border-white/10"
               >
                 <option value="">All Rarities</option>
-                {rarities.map(rarity => (
+                {Object.keys(rarityColors).map((rarity) => (
                   <option key={rarity} value={rarity}>{rarity}</option>
                 ))}
               </select>
@@ -191,7 +156,7 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {activeTab === 'marketplace' ? (
             <motion.div
@@ -200,76 +165,54 @@ export default function MarketplacePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Your Balance</p>
-                    <p className="text-2xl font-bold text-amber-400">12,500 $MNMOON</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">Listed Pokemon</p>
-                    <p className="text-2xl font-bold text-white">{filteredMarketplace.length}</p>
-                  </div>
+              {filteredMarketplace.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-4">🏪</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">No Pokemon Listed</h2>
+                  <p className="text-gray-400 mb-4">Be the first to list your Pokemon for sale!</p>
+                  <p className="text-sm text-gray-500">Connect your wallet and list Pokemon from your inventory</p>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredMarketplace.map((pokemon, index) => {
-                  const colors = typeColors[pokemon.type] || typeColors.normal;
-                  const rarity = rarityColors[pokemon.rarity];
-
-                  return (
-                    <motion.div
-                      key={`${pokemon.id}-${index}`}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.03 }}
-                      className={`relative bg-slate-800/50 rounded-xl p-4 border-2 ${rarity.border} hover:border-amber-500/50 transition-all hover:scale-105 cursor-pointer`}
-                    >
-                      <div className="text-center">
-                        <div className="relative w-20 h-20 mx-auto mb-3">
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filteredMarketplace.map((pokemon) => {
+                    const colors = typeColors[pokemon.type] || typeColors.normal;
+                    const rarity = rarityColors[pokemon.rarity];
+                    return (
+                      <motion.div
+                        key={pokemon.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`p-4 rounded-xl border ${rarity.border} ${rarity.bg} bg-slate-800/50`}
+                      >
+                        <div className="relative mb-3">
                           <Image
                             src={getPokemonImageUrl(pokemon.id)}
                             alt={pokemon.name}
-                            width={80}
-                            height={80}
-                            className="object-contain"
+                            width={96}
+                            height={96}
+                            className="mx-auto"
                           />
+                          <span className={`absolute top-0 right-0 px-2 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text}`}>
+                            {typeEmojis[pokemon.type]}
+                          </span>
                         </div>
-                        <h3 className="font-bold text-white">{pokemon.name}</h3>
-                        <div className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${colors.bg} ${colors.text}`}>
-                          {pokemon.rarity}
+                        <h3 className="font-bold text-white text-center">{pokemon.name}</h3>
+                        <div className="flex items-center justify-between mt-2 text-sm">
+                          <span className={`font-bold ${rarity.text}`}>{pokemon.rarity}</span>
+                          <span className="text-amber-400">⚔️ {pokemon.power}</span>
                         </div>
-                        <div className="mt-2 flex items-center justify-center space-x-1 text-gray-400 text-sm">
-                          <span>{typeEmojis[pokemon.type]}</span>
-                          <span className="capitalize">{pokemon.type}</span>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-gray-400 text-sm">@{pokemon.seller}</span>
+                          <button
+                            onClick={() => handlePurchase('pokemon', pokemon)}
+                            className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm"
+                          >
+                            {pokemon.price.toLocaleString()} 🪙
+                          </button>
                         </div>
-                        <div className="mt-1 flex items-center justify-center space-x-1 text-amber-400">
-                          <span>⚔️</span>
-                          <span className="font-bold">{pokemon.power}</span>
-                        </div>
-                        <div className="mt-3 p-2 rounded-lg bg-slate-700/50">
-                          <div className="text-xs text-gray-400 mb-1">Price</div>
-                          <div className="text-xl font-bold text-white">{formatPrice(pokemon.price)} $MNMOON</div>
-                          <div className="text-xs text-gray-500">@{pokemon.seller}</div>
-                        </div>
-                        <button
-                          onClick={() => handlePurchase('pokemon', pokemon)}
-                          className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white hover:opacity-90 transition-opacity"
-                        >
-                          Buy Now
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {filteredMarketplace.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-white mb-2">No Pokemon Found</h3>
-                  <p className="text-gray-400">Try adjusting your search or filters</p>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
@@ -280,60 +223,35 @@ export default function MarketplacePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Your Balance</p>
-                    <p className="text-2xl font-bold text-amber-400">12,500 $MNMOON</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">Available Items</p>
-                    <p className="text-2xl font-bold text-white">{filteredShop.length}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {filteredShop.map((item, index) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {filteredShop.map((item) => (
                   <motion.div
                     key={item.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="relative bg-slate-800/50 rounded-xl p-4 border border-white/5 hover:border-purple-500/30 transition-all hover:scale-105 cursor-pointer"
+                    className="p-4 rounded-xl bg-slate-800/50 border border-white/5 hover:border-amber-500/30 transition-colors"
                   >
-                    <div className="text-center">
-                      <div className="text-5xl mb-3">{item.emoji}</div>
-                      <h3 className="font-bold text-white">{item.name}</h3>
-                      <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
-                      <div className="mt-3 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                        <div className="text-xs text-purple-300 mb-1">Price</div>
-                        <div className="text-xl font-bold text-amber-400">{formatPrice(item.price)} $MNMOON</div>
-                        <div className="text-xs text-gray-500">{item.stock} in stock</div>
-                      </div>
+                    <div className="text-4xl mb-3 text-center">{item.emoji}</div>
+                    <h3 className="font-bold text-white text-center text-sm">{item.name}</h3>
+                    <p className="text-gray-400 text-xs text-center mt-1">{item.desc}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-gray-500 text-xs">{item.stock} left</span>
                       <button
                         onClick={() => handlePurchase('item', item)}
-                        className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 font-bold text-white hover:opacity-90 transition-opacity"
+                        className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm"
                       >
-                        Buy
+                        {item.price.toLocaleString()} 🪙
                       </button>
                     </div>
                   </motion.div>
                 ))}
               </div>
-
-              {filteredShop.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-white mb-2">No Items Found</h3>
-                  <p className="text-gray-400">Try adjusting your search or filters</p>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
+      {/* Purchase Modal */}
       <AnimatePresence>
         {showPurchaseModal && (
           <motion.div
@@ -350,30 +268,51 @@ export default function MarketplacePage() {
               className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="text-center">
-                <div className="text-6xl mb-4">
-                  {showPurchaseModal.type === 'pokemon' ? '🐉' : '🛒'}
+              <h2 className="text-xl font-bold text-white mb-4">Confirm Purchase</h2>
+              <div className="text-center py-4">
+                {showPurchaseModal.type === 'pokemon' ? (
+                  <>
+                    <Image
+                      src={getPokemonImageUrl(showPurchaseModal.item.id)}
+                      alt={showPurchaseModal.item.name}
+                      width={100}
+                      height={100}
+                      className="mx-auto mb-4"
+                    />
+                    <h3 className="text-lg font-bold text-white">{showPurchaseModal.item.name}</h3>
+                    <p className="text-gray-400">{showPurchaseModal.item.rarity} • ⚔️ {showPurchaseModal.item.power}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-6xl mb-4">{showPurchaseModal.item.emoji}</div>
+                    <h3 className="text-lg font-bold text-white">{showPurchaseModal.item.name}</h3>
+                    <p className="text-gray-400">{showPurchaseModal.item.desc}</p>
+                  </>
+                )}
+              </div>
+              <div className="bg-slate-700/50 rounded-xl p-4 mb-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-400">Price</span>
+                  <span className="text-amber-400 font-bold">{showPurchaseModal.item.price.toLocaleString()} $MNMOON</span>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">{showPurchaseModal.item.name}</h2>
-                <p className="text-gray-400 mb-4">{showPurchaseModal.item.desc}</p>
-                <div className="p-4 rounded-xl bg-slate-700/50 mb-4">
-                  <p className="text-sm text-gray-400">Price</p>
-                  <p className="text-3xl font-bold text-amber-400">{showPurchaseModal.item.price.toLocaleString()} $MNMOON</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Stock</span>
+                  <span className="text-white">{showPurchaseModal.item.stock}</span>
                 </div>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setShowPurchaseModal(null)}
-                    className="flex-1 py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmPurchase}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white hover:opacity-90 transition-opacity"
-                  >
-                    Confirm
-                  </button>
-                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPurchaseModal(null)}
+                  className="flex-1 py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmPurchase}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white"
+                >
+                  Buy Now
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -382,3 +321,4 @@ export default function MarketplacePage() {
     </div>
   );
 }
+

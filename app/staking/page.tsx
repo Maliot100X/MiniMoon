@@ -28,17 +28,17 @@ const TOKEN_ABI = [
   },
 ];
 
-// EXACT Streme.fun format
+// Placeholder - In production, fetch from API/chain
 const COIN_INFO = {
   name: '$MNMOON',
   symbol: 'MNMOON',
   totalSupply: 1000000000,
-  circulatingSupply: 250000000,
-  price: 0.015,
-  marketCap: 15000000,
-  holders: 12500,
-  tvl: 16550000,
-  launchDate: '2024-12-01',
+  circulatingSupply: 0,
+  price: 0,
+  marketCap: 0,
+  holders: 0,
+  tvl: 0,
+  launchDate: 'Coming Soon',
 };
 
 const STAKING_POOLS = [
@@ -50,7 +50,7 @@ const STAKING_POOLS = [
     lockPeriod: 0,
     rewards: 'Instant Rewards',
     color: 'from-green-500 to-emerald-500',
-    tvl: 1250000,
+    tvl: 0,
     description: 'No lock period, withdraw anytime',
   },
   {
@@ -61,7 +61,7 @@ const STAKING_POOLS = [
     lockPeriod: 7,
     rewards: 'Daily Rewards',
     color: 'from-blue-500 to-cyan-500',
-    tvl: 2800000,
+    tvl: 0,
     description: 'Higher rewards with 7-day lock',
   },
   {
@@ -72,7 +72,7 @@ const STAKING_POOLS = [
     lockPeriod: 30,
     rewards: 'Daily Rewards',
     color: 'from-purple-500 to-pink-500',
-    tvl: 4500000,
+    tvl: 0,
     description: 'Best APY with 30-day lock',
   },
   {
@@ -83,7 +83,7 @@ const STAKING_POOLS = [
     lockPeriod: 90,
     rewards: 'Instant + Bonus Rewards',
     color: 'from-amber-500 to-orange-500',
-    tvl: 8000000,
+    tvl: 0,
     description: 'Maximum rewards for big stakers',
   },
 ];
@@ -92,7 +92,7 @@ export default function StakingPage() {
   const { isConnected, address } = useAccount();
   const [selectedPool, setSelectedPool] = useState('flexible');
   const [stakedAmount, setStakedAmount] = useState(0);
-  const [stakingRewards, setStakingRewards] = useState(0.4567);
+  const [stakingRewards, setStakingRewards] = useState(0);
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [stakeAmount, setStakeAmount] = useState('');
 
@@ -108,7 +108,11 @@ export default function StakingPage() {
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    query: { enabled: !!address && isConnected },
   });
+
+  // Calculate real balance
+  const mnmoonAmount = mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)) : 0;
 
   // Get total supply
   const { data: totalSupply } = useReadContract({
@@ -117,12 +121,7 @@ export default function StakingPage() {
     functionName: 'totalSupply',
   });
 
-  // Auto-sync wallet balance
-  useEffect(() => {
-    if (isConnected && address) {
-      console.log('Wallet synced:', address);
-    }
-  }, [isConnected, address]);
+  const totalSupplyAmount = totalSupply ? parseFloat(formatEther(totalSupply as bigint)) : 0;
 
   // Simulate rewards accumulation
   useEffect(() => {
@@ -144,13 +143,13 @@ export default function StakingPage() {
       alert('Please enter a valid amount');
       return;
     }
-    
+
     const pool = STAKING_POOLS.find(p => p.id === selectedPool);
     if (pool && amount < pool.minStake) {
       alert(`Minimum stake is ${pool.minStake.toLocaleString()} $MNMOON`);
       return;
     }
-    
+
     setStakedAmount(prev => prev + amount);
     setStakingRewards(0);
     setShowStakeModal(false);
@@ -160,7 +159,7 @@ export default function StakingPage() {
 
   const handleUnstake = () => {
     if (stakedAmount <= 0) return;
-    
+
     const pool = STAKING_POOLS.find(p => p.id === selectedPool);
     if (pool && pool.lockPeriod > 0) {
       const confirm = window.confirm(
@@ -169,7 +168,7 @@ export default function StakingPage() {
       );
       if (!confirm) return;
     }
-    
+
     setStakedAmount(0);
     setStakingRewards(0);
   };
@@ -199,7 +198,7 @@ export default function StakingPage() {
             </div>
           </div>
 
-          {/* EXACT Streme.fun Coin Info Format */}
+          {/* Coin Info Banner */}
           <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-pink-500/20 rounded-2xl p-6 border border-amber-500/30">
             <div className="flex flex-wrap items-center justify-between gap-6">
               {/* Left: Icon and Name */}
@@ -234,16 +233,16 @@ export default function StakingPage() {
               </div>
             </div>
 
-            {/* Supply Info */}
+{/* Supply Info */}
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-400">Supply: {formatNumber(COIN_INFO.circulatingSupply)} / {formatNumber(COIN_INFO.totalSupply)}</span>
                 <span className="text-gray-400">Launched: {COIN_INFO.launchDate}</span>
               </div>
               <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
-                  style={{ width: `${(COIN_INFO.circulatingSupply / COIN_INFO.totalSupply) * 100}%` }}
+                  style={{ width: `${totalSupplyAmount > 0 ? (COIN_INFO.circulatingSupply / totalSupplyAmount) * 100 : 0}%` }}
                 />
               </div>
             </div>
@@ -262,7 +261,7 @@ export default function StakingPage() {
               className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-2xl p-6 border border-amber-500/20"
             >
               <h3 className="text-xl font-bold text-white mb-4">💰 Your Staking</h3>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="text-center p-4 rounded-xl bg-slate-800/50">
                   <p className="text-3xl font-bold text-amber-400">{stakedAmount.toLocaleString()}</p>
@@ -300,38 +299,14 @@ export default function StakingPage() {
               </div>
             </motion.div>
 
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
-            >
-              <h3 className="text-lg font-bold text-white mb-4">⚡ Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="p-3 rounded-xl bg-slate-700/50 text-white font-medium hover:bg-slate-700 transition-colors">
-                  📈 View Analytics
-                </button>
-                <button className="p-3 rounded-xl bg-slate-700/50 text-white font-medium hover:bg-slate-700 transition-colors">
-                  📊 Rewards History
-                </button>
-                <button className="p-3 rounded-xl bg-slate-700/50 text-white font-medium hover:bg-slate-700 transition-colors">
-                  📜 Stake History
-                </button>
-                <button className="p-3 rounded-xl bg-slate-700/50 text-white font-medium hover:bg-slate-700 transition-colors">
-                  🔄 Auto-Compound
-                </button>
-              </div>
-            </motion.div>
-
             {/* Wallet Sync Status */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className={`rounded-2xl p-4 border ${
-                isConnected 
-                  ? 'bg-green-500/10 border-green-500/30' 
+                isConnected
+                  ? 'bg-green-500/10 border-green-500/30'
                   : 'bg-slate-800/50 border-white/5'
               }`}
             >
@@ -346,8 +321,8 @@ export default function StakingPage() {
                     {isConnected ? 'Wallet Connected' : 'Wallet Not Connected'}
                   </p>
                   <p className="text-sm text-gray-400">
-                    {isConnected 
-                      ? 'Balance auto-synced' 
+                    {isConnected
+                      ? `Balance: ${mnmoonAmount.toLocaleString()} $MNMOON`
                       : 'Connect wallet to start staking'}
                   </p>
                 </div>
@@ -365,10 +340,10 @@ export default function StakingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
             >
               <h3 className="text-xl font-bold text-white mb-4">🎯 Staking Pools</h3>
-              
+
               <div className="space-y-4">
                 {STAKING_POOLS.map((pool) => (
                   <button
@@ -403,11 +378,10 @@ export default function StakingPage() {
                           <Clock className="h-3 w-3" />
                           <span>{pool.lockPeriod} days</span>
                         </span>
-                        <span className="text-gray-400">TVL: ${formatNumber(pool.tvl)}</span>
                       </div>
                       <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        pool.rewards.includes('Instant') 
-                          ? 'bg-green-500/20 text-green-400' 
+                        pool.rewards.includes('Instant')
+                          ? 'bg-green-500/20 text-green-400'
                           : 'bg-blue-500/20 text-blue-400'
                       }`}>
                         {pool.rewards}
@@ -422,7 +396,7 @@ export default function StakingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.3 }}
               className="grid grid-cols-2 gap-4"
             >
               <div className="bg-slate-800/50 rounded-xl p-4 border border-white/5">
@@ -443,7 +417,7 @@ export default function StakingPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           className="mt-8 bg-slate-800/50 rounded-2xl p-6 border border-white/5"
         >
           <h3 className="text-xl font-bold text-white mb-6">💡 How Staking Works</h3>
@@ -498,7 +472,7 @@ export default function StakingPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="text-xl font-bold text-white mb-4">Stake $MNMOON</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Amount to Stake</label>
@@ -513,14 +487,14 @@ export default function StakingPage() {
                     <button onClick={() => setStakeAmount('100')} className="hover:text-white">100</button>
                     <button onClick={() => setStakeAmount('1000')} className="hover:text-white">1K</button>
                     <button onClick={() => setStakeAmount('10000')} className="hover:text-white">10K</button>
-                    <button onClick={() => setStakeAmount('12500')} className="hover:text-white">All</button>
+                    <button onClick={() => setStakeAmount(Math.floor(mnmoonAmount).toString())} className="hover:text-white">All</button>
                   </div>
                 </div>
-                
+
                 <div className="p-3 rounded-lg bg-slate-700/30 text-sm">
                   <div className="flex justify-between text-gray-400 mb-1">
                     <span>Available</span>
-                    <span className="text-white">12,500 $MNMOON</span>
+                    <span className="text-white">{mnmoonAmount.toLocaleString()} $MNMOON</span>
                   </div>
                   <div className="flex justify-between text-gray-400 mb-1">
                     <span>Pool APY</span>
@@ -535,7 +509,7 @@ export default function StakingPage() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-3">
                   <button
                     onClick={() => setShowStakeModal(false)}

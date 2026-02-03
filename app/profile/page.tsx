@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useBalance, useReadContract } from 'wagmi';
 import { Settings, Copy, ExternalLink, Wallet, TrendingUp, DollarSign } from 'lucide-react';
 import Inventory from '@/components/Inventory';
-import { formatEther, formatUnits } from 'viem';
+import { formatEther } from 'viem';
 
 // $MNMOON Token contract on Base
 const MNMOON_TOKEN_ADDRESS = '0x184f03750171f9eF32B6267271a7FEE59cb5F387';
 
-// Token ABI for balanceOf
+// Token ABI
 const TOKEN_ABI = [
   {
     inputs: [{ name: 'owner', type: 'address' }],
@@ -20,24 +20,7 @@ const TOKEN_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
-  {
-    inputs: [],
-    name: 'totalSupply',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
 ];
-
-interface TokenHolding {
-  symbol: string;
-  name: string;
-  address: string;
-  balance: string;
-  value: number;
-  price: number;
-  icon: string;
-}
 
 export default function ProfilePage() {
   const { isConnected, address } = useAccount();
@@ -45,64 +28,46 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('Playing MiniMoon on Base | Pokemon Trainer | Web3 Gamer');
   const [selectedAvatar, setSelectedAvatar] = useState(6);
   const [selectedBackground, setSelectedBackground] = useState(0);
-  const [holdings, setHoldings] = useState<TokenHolding[]>([]);
-  const [loadingHoldings, setLoadingHoldings] = useState(false);
   const [showHoldings, setShowHoldings] = useState(false);
-
-  // Get native token balance (ETH on Base)
-  const { data: ethBalance } = useBalance({
-    address,
-    chainId: 8453, // Base chain ID
+  const [realData, setRealData] = useState({
+    power: 0,
+    wins: 0,
+    losses: 0,
+    monsters: 0,
+    level: 1,
+    rank: 0,
   });
 
-  // Read $MNMOON balance from contract
+  // Get native ETH balance from Base
+  const { data: ethBalance } = useBalance({
+    address,
+    chainId: 8453,
+  });
+
+  // Get $MNMOON balance from contract
   const { data: mnmoonBalance } = useReadContract({
     address: MNMOON_TOKEN_ADDRESS,
     abi: TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && isConnected,
-    },
+    query: { enabled: !!address && isConnected },
   });
 
-  // Calculate total portfolio value
-  const totalValue = holdings.reduce((sum, h) => sum + h.value, 0) +
-    (ethBalance ? parseFloat(ethBalance.formatted) * 3000 : 0) + // ETH ~$3000
-    (mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)) * 0.015 : 0); // $MNMOON ~$0.015
+  // Calculate real values
+  const mnmoonAmount = mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)) : 0;
+  const ethAmount = ethBalance ? parseFloat(ethBalance.formatted) : 0;
+  const portfolioValue = (mnmoonAmount * 0.015) + (ethAmount * 3000);
 
-  // User profile data
-  const profile = {
-    username: 'MiniMoonTrainer',
-    fid: 12345,
-    level: 45,
-    experience: 4500,
-    monsters: 12,
-    totalPower: 8450,
-    wins: 156,
-    losses: 42,
-    tokens: 12500,
-    rank: 234,
-    subscription: 'premium',
-    joinDate: '2024-01-15',
-    achievements: 23,
-  };
-
-  // Avatar options (using Pokemon IDs)
-  const avatars = [
-    6,   // Charizard
-    9,   // Blastoise
-    25,  // Pikachu
-    94,  // Gengar
-    149, // Dragonite
-    150, // Mewtwo
-    130, // Gyarados
-    282, // Gardevoir
-    143, // Snorlax
-    65,  // Alakazam
-    59,  // Arcanine
-    68,  // Machamp
-  ];
+  // Load real user data from chain/localStorage
+  useEffect(() => {
+    if (isConnected && address) {
+      // In production, fetch real data from chain
+      const savedData = localStorage.getItem(`minimoon_${address}`);
+      if (savedData) {
+        setRealData(JSON.parse(savedData));
+      }
+    }
+  }, [isConnected, address]);
 
   const backgrounds = [
     { name: 'Volcanic', color: 'from-red-600 to-orange-700', icon: '🌋' },
@@ -113,25 +78,7 @@ export default function ProfilePage() {
     { name: 'Space', color: 'from-slate-900 to-purple-900', icon: '🌌' },
   ];
 
-  const badges = [
-    { name: 'Champion', icon: '🏆', earned: true },
-    { name: 'Legend', icon: '⭐', earned: true },
-    { name: 'Veteran', icon: '🎖️', earned: true },
-    { name: 'Collector', icon: '📚', earned: true },
-    { name: 'Trader', icon: '💰', earned: true },
-    { name: 'Warrior', icon: '⚔️', earned: true },
-    { name: 'Scholar', icon: '📖', earned: false },
-    { name: 'Master', icon: '👑', earned: false },
-  ];
-
-  const achievements = [
-    { name: 'First Victory', desc: 'Win your first battle', icon: '🎯', progress: 100 },
-    { name: 'Monster Collector', desc: 'Own 10 monsters', icon: '🐉', progress: 100 },
-    { name: 'Arena Champion', desc: 'Reach ELO 2000', icon: '⚔️', progress: 82 },
-    { name: 'Quest Master', desc: 'Complete 100 quests', icon: '📅', progress: 45 },
-    { name: 'Wealthy', desc: 'Earn 50,000 tokens', icon: '💰', progress: 25 },
-    { name: 'Hatch Master', desc: 'Hatch 100 eggs', icon: '🥚', progress: 68 },
-  ];
+  const avatars = [6, 9, 25, 94, 149, 150, 130, 282, 143, 65, 59, 68];
 
   const getAvatarUrl = (id: number) => {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -144,6 +91,20 @@ export default function ProfilePage() {
     }
   };
 
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50">
+            <div className="text-6xl mb-4">👤</div>
+            <h3 className="text-xl font-bold text-white mb-2">Connect Wallet</h3>
+            <p className="text-slate-400 text-center">Connect your Base wallet to view your profile</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-8">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -153,22 +114,14 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl overflow-hidden mb-8"
         >
-          {/* Banner */}
           <div className={`h-48 bg-gradient-to-r ${backgrounds[selectedBackground].color} relative`}>
             <div className="absolute top-4 right-4 flex items-center space-x-2 px-3 py-1 rounded-full bg-black/30">
-              <span className="text-sm">Lv.{profile.level}</span>
+              <span className="text-sm">Lv.{realData.level}</span>
             </div>
-            {profile.subscription === 'premium' && (
-              <div className="absolute top-4 left-4 flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/80">
-                <span className="text-sm font-bold text-white">⭐ VIP</span>
-              </div>
-            )}
           </div>
 
-          {/* Profile Info */}
           <div className="bg-slate-800/50 p-8 relative">
             <div className="flex flex-col md:flex-row md:items-end -mt-20 mb-6 space-y-4 md:space-y-0 md:space-x-6">
-              {/* Avatar */}
               <div className="relative">
                 <div className="h-32 w-32 rounded-2xl bg-gradient-to-br from-amber-500 to-pink-500 flex items-center justify-center shadow-2xl">
                   <Image
@@ -187,24 +140,19 @@ export default function ProfilePage() {
                 </button>
               </div>
 
-              {/* Name & Info */}
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
-                  <h1 className="text-3xl font-bold text-white">{profile.username}</h1>
-                  {profile.fid && (
-                    <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-400 text-sm">
-                      FID: {profile.fid}
-                    </span>
-                  )}
+                  <h1 className="text-3xl font-bold text-white">
+                    {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Trainer'}
+                  </h1>
                 </div>
                 <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
-                  <span>Level {profile.level}</span>
+                  <span>Level {realData.level}</span>
                   <span>•</span>
-                  <span>Joined {profile.joinDate}</span>
+                  <span>Base Chain</span>
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex space-x-3">
                 <button
                   onClick={copyAddress}
@@ -248,100 +196,15 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* Edit Modal */}
-        {editing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-            onClick={() => setEditing(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="text-2xl font-bold text-white mb-6">Customize Profile</h2>
-
-              {/* Avatar Selection */}
-              <div className="mb-6">
-                <h3 className="font-bold text-white mb-3 flex items-center space-x-2">
-                  <span>🎨</span>
-                  <span>Choose Avatar</span>
-                </h3>
-                <div className="grid grid-cols-6 gap-2">
-                  {avatars.map((avatarId) => (
-                    <button
-                      key={avatarId}
-                      onClick={() => setSelectedAvatar(avatarId)}
-                      className={`h-16 w-16 rounded-xl flex items-center justify-center transition-all ${
-                        selectedAvatar === avatarId
-                          ? 'bg-gradient-to-br from-amber-500 to-pink-500 ring-2 ring-white'
-                          : 'bg-slate-700 hover:bg-slate-600'
-                      }`}
-                    >
-                      <Image
-                        src={getAvatarUrl(avatarId)}
-                        alt="Avatar"
-                        width={48}
-                        height={48}
-                        className="object-contain"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Background Selection */}
-              <div className="mb-6">
-                <h3 className="font-bold text-white mb-3 flex items-center space-x-2">
-                  <span>🖼️</span>
-                  <span>Profile Background</span>
-                </h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {backgrounds.map((bg, index) => (
-                    <button
-                      key={bg.name}
-                      onClick={() => setSelectedBackground(index)}
-                      className={`h-16 rounded-xl bg-gradient-to-r ${bg.color} flex items-center justify-center space-x-2 transition-all ${
-                        selectedBackground === index ? 'ring-2 ring-white' : 'opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <span>{bg.icon}</span>
-                      <span className="text-white text-sm font-medium">{bg.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-6 py-2 rounded-xl bg-slate-700 text-white font-medium hover:bg-slate-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6 mb-8">
           {[
-            { icon: '🐉', label: 'Monsters', value: profile.monsters, color: 'text-purple-400' },
-            { icon: '💪', label: 'Power', value: profile.totalPower.toLocaleString(), color: 'text-red-400' },
-            { icon: '⚔️', label: 'Wins', value: profile.wins, color: 'text-green-400' },
-            { icon: '💀', label: 'Losses', value: profile.losses, color: 'text-gray-400' },
-            { icon: '💰', label: 'Tokens', value: `${profile.tokens.toLocaleString()} $MNMOON`, color: 'text-amber-400' },
-            { icon: '🏆', label: 'Rank', value: `#${profile.rank}`, color: 'text-amber-400' },
+            { icon: '🐉', label: 'Monsters', value: realData.monsters, color: 'text-purple-400' },
+            { icon: '💪', label: 'Power', value: realData.power.toLocaleString(), color: 'text-red-400' },
+            { icon: '⚔️', label: 'Wins', value: realData.wins, color: 'text-green-400' },
+            { icon: '💀', label: 'Losses', value: realData.losses, color: 'text-gray-400' },
+            { icon: '💰', label: 'Tokens', value: `${mnmoonAmount.toLocaleString()} $MNMOON`, color: 'text-amber-400' },
+            { icon: '🏆', label: 'Rank', value: realData.rank > 0 ? `#${realData.rank}` : 'Unranked', color: 'text-amber-400' },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -358,240 +221,120 @@ export default function ProfilePage() {
         </div>
 
         {/* Real Holdings Display */}
-        {isConnected && address && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mb-8 rounded-2xl bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-indigo-400" />
-                Real Holdings on Base
-              </h2>
-              <button
-                onClick={() => setShowHoldings(!showHoldings)}
-                className="px-4 py-2 rounded-lg bg-indigo-500/20 text-indigo-400 text-sm font-medium hover:bg-indigo-500/30 transition-colors"
-              >
-                {showHoldings ? 'Hide' : 'Show'} Holdings
-              </button>
-            </div>
-
-            <AnimatePresence>
-              {showHoldings && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  {/* Total Portfolio Value */}
-                  <div className="mb-6 p-4 rounded-xl bg-black/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                          <DollarSign className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-gray-400">Total Portfolio Value</div>
-                          <div className="text-2xl font-bold text-white">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-green-400">
-                        <TrendingUp className="h-5 w-5" />
-                        <span className="font-medium">+12.5%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Token Holdings Grid */}
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {/* Native ETH Balance */}
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/10">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl">
-                        Ξ
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-400">Base ETH</div>
-                        <div className="text-lg font-bold text-white">
-                          {ethBalance ? parseFloat(ethBalance.formatted).toFixed(4) : '0.0000'} ETH
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          ~${ethBalance ? (parseFloat(ethBalance.formatted) * 3000).toFixed(2) : '0.00'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* $MNMOON Token */}
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-amber-500/30">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                        <Image
-                          src="https://cdn.streme.fun/images/tokens/0x184f03750171f9eF32B6267271a7FEE59cb5F387.png"
-                          alt="$MNMOON"
-                          width={32}
-                          height={32}
-                          className="rounded-full"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-400">$MNMOON</div>
-                        <div className="text-lg font-bold text-white">
-                          {mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          ~${mnmoonBalance ? (parseFloat(formatEther(mnmoonBalance as bigint)) * 0.015).toFixed(2) : '0.00'}
-                        </div>
-                      </div>
-                      <a
-                        href={`https://basescan.org/token/${MNMOON_TOKEN_ADDRESS}?a=${address}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
-                      </a>
-                    </div>
-
-                    {/* More tokens placeholder */}
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/10 opacity-60">
-                      <div className="h-12 w-12 rounded-xl bg-slate-700 flex items-center justify-center text-xl">
-                        +{/* Add more tokens here */}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-400">More Tokens</div>
-                        <div className="text-lg font-bold text-white">Coming Soon</div>
-                        <div className="text-xs text-gray-500">Connect to see all holdings</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* View on Explorer */}
-                  <div className="mt-4 flex justify-end">
-                    <a
-                      href={`https://basescan.org/address/${address}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      View all on Basescan
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {/* Inventory Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          className="mb-8 rounded-2xl bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-indigo-400" />
+              Real Holdings on Base
+            </h2>
+            <button
+              onClick={() => setShowHoldings(!showHoldings)}
+              className="px-4 py-2 rounded-lg bg-indigo-500/20 text-indigo-400 text-sm font-medium hover:bg-indigo-500/30 transition-colors"
+            >
+              {showHoldings ? 'Hide' : 'Show'} Holdings
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showHoldings && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                {/* Total Portfolio Value */}
+                <div className="mb-6 p-4 rounded-xl bg-black/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <DollarSign className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-400">Total Portfolio Value</div>
+                        <div className="text-2xl font-bold text-white">${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-green-400">
+                      <TrendingUp className="h-5 w-5" />
+                      <span className="font-medium">Live</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Token Holdings */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {/* Native ETH */}
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-white/10">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-2xl">
+                      Ξ
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-400">Base ETH</div>
+                      <div className="text-lg font-bold text-white">
+                        {ethAmount.toFixed(4)} ETH
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ~${(ethAmount * 3000).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* $MNMOON */}
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 border border-amber-500/30">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                      <span className="text-white font-bold">M</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-400">$MNMOON</div>
+                      <div className="text-lg font-bold text-white">
+                        {mnmoonAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} tokens
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ~${(mnmoonAmount * 0.015).toFixed(2)}
+                      </div>
+                    </div>
+                    <a
+                      href={`https://basescan.org/token/${MNMOON_TOKEN_ADDRESS}?a=${address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors"
+>
+                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                    </a>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <a
+                    href={`https://basescan.org/address/${address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    View all on Basescan
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Inventory */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
           <Inventory showHeader={true} />
         </motion.div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Achievements */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl bg-slate-800/50 border border-white/5 p-6"
-          >
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
-              <span>🏆</span>
-              <span>Achievements ({profile.achievements}/50)</span>
-            </h2>
-            <div className="space-y-4">
-              {achievements.map((achievement) => (
-                <div key={achievement.name} className="flex items-center space-x-4 p-3 rounded-xl bg-slate-700/30">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center text-2xl">
-                    {achievement.icon}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white">{achievement.name}</h4>
-                      <span className="text-sm text-gray-400">{achievement.progress}%</span>
-                    </div>
-                    <p className="text-sm text-gray-400">{achievement.desc}</p>
-                    <div className="mt-2 h-2 rounded-full bg-slate-700 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
-                        style={{ width: `${achievement.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Badges Collection */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-2xl bg-slate-800/50 border border-white/5 p-6"
-          >
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
-              <span>🎖️</span>
-              <span>Badges Collection</span>
-            </h2>
-            <div className="grid grid-cols-4 gap-4">
-              {badges.map((badge) => (
-                <div
-                  key={badge.name}
-                  className={`p-4 rounded-xl text-center ${
-                    badge.earned
-                      ? 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20'
-                      : 'bg-slate-700/30 opacity-50'
-                  }`}
-                >
-                  <div className="text-3xl mb-2">{badge.icon}</div>
-                  <div className={`text-sm ${badge.earned ? 'text-white' : 'text-gray-500'}`}>
-                    {badge.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Experience Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 rounded-2xl bg-slate-800/50 border border-white/5 p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-2xl">⭐</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-white">Level {profile.level}</h3>
-                <p className="text-sm text-gray-400">Next level in {100 - (profile.experience % 100)} EXP</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-purple-400">{profile.experience}</div>
-              <div className="text-sm text-gray-400">Total EXP</div>
-            </div>
-          </div>
-          <div className="h-6 rounded-full bg-slate-700 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
-              style={{ width: `${(profile.experience % 100)}%` }}
-            />
-          </div>
-        </motion.div>
-
         {/* Quick Links */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-4">
           {[
             { name: 'My Monsters', icon: '🐉', href: '/dungeons', color: 'from-purple-500 to-pink-500' },
             { name: 'Marketplace', icon: '🏪', href: '/marketplace', color: 'from-amber-500 to-yellow-500' },

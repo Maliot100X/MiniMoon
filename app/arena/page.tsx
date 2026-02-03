@@ -18,24 +18,6 @@ interface Pokemon {
   effects: string[];
 }
 
-const myTeam: Pokemon[] = [
-  { id: 6, name: 'Charizard', type: 'fire', power: 500, health: 500, maxHealth: 500, rarity: 'Rare', effects: ['burn', 'flying'] },
-  { id: 9, name: 'Blastoise', type: 'water', power: 500, health: 550, maxHealth: 550, rarity: 'Rare', effects: ['defense', 'water'] },
-  { id: 149, name: 'Dragonite', type: 'dragon', power: 600, health: 600, maxHealth: 600, rarity: 'Epic', effects: ['dragon', 'flying'] },
-  { id: 94, name: 'Gengar', type: 'ghost', power: 500, health: 480, maxHealth: 480, rarity: 'Epic', effects: ['ghost', 'poison'] },
-  { id: 130, name: 'Gyarados', type: 'water', power: 550, health: 550, maxHealth: 550, rarity: 'Rare', effects: ['water', 'flying'] },
-  { id: 25, name: 'Pikachu', type: 'electric', power: 120, health: 120, maxHealth: 120, rarity: 'Common', effects: ['electric'] },
-];
-
-const enemyTeam: Pokemon[] = [
-  { id: 150, name: 'Mewtwo', type: 'psychic', power: 1000, health: 1000, maxHealth: 1000, rarity: 'Legendary', effects: ['psychic', 'telepathy'] },
-  { id: 384, name: 'Rayquaza', type: 'dragon', power: 1300, health: 1300, maxHealth: 1300, rarity: 'Mythic', effects: ['dragon', 'sky'] },
-  { id: 144, name: 'Articuno', type: 'ice', power: 900, health: 900, maxHealth: 900, rarity: 'Legendary', effects: ['ice', 'flying'] },
-  { id: 145, name: 'Zapdos', type: 'electric', power: 900, health: 900, maxHealth: 900, rarity: 'Legendary', effects: ['electric', 'flying'] },
-  { id: 146, name: 'Moltres', type: 'fire', power: 900, health: 900, maxHealth: 900, rarity: 'Legendary', effects: ['fire', 'flying'] },
-  { id: 493, name: 'Arceus', type: 'normal', power: 1500, health: 1500, maxHealth: 1500, rarity: 'Mythic', effects: ['god', 'normal'] },
-];
-
 const typeEmojis: Record<string, string> = {
   fire: '🔥', water: '💧', electric: '⚡', grass: '🌿',
   ice: '❄️', dragon: '🐉', ghost: '👻', fighting: '🥊',
@@ -52,439 +34,410 @@ const rarityColors: Record<string, { text: string; border: string; glow: string;
 };
 
 export default function ArenaPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [inBattle, setInBattle] = useState(false);
-  const [myPokemon, setMyPokemon] = useState<Pokemon>(myTeam[0]);
-  const [enemyPokemon, setEnemyPokemon] = useState<Pokemon>(enemyTeam[0]);
-  const [myHealth, setMyHealth] = useState(500);
-  const [enemyHealth, setEnemyHealth] = useState(1000);
-  const [battleLog, setBattleLog] = useState<string[]>(['⚔️ Welcome to the Battle Arena!', 'Select a Pokemon to start battling']);
+  const [myPokemon, setMyPokemon] = useState<Pokemon | null>(null);
+  const [enemyPokemon, setEnemyPokemon] = useState<Pokemon | null>(null);
+  const [myHealth, setMyHealth] = useState(0);
+  const [enemyHealth, setEnemyHealth] = useState(0);
+  const [battleLog, setBattleLog] = useState<string[]>(['⚔️ Welcome to the Battle Arena!', 'Connect your wallet to start battling']);
   const [battleTurn, setBattleTurn] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [attackEffect, setAttackEffect] = useState<'my' | 'enemy' | null>(null);
-  const [myWins, setMyWins] = useState(15);
-  const [enemyWins, setEnemyWins] = useState(8);
+  const [myWins, setMyWins] = useState(0);
+  const [enemyWins, setEnemyWins] = useState(0);
   const [showPvPMatchmaking, setShowPvPMatchmaking] = useState(false);
   const [pvpSearching, setPvpSearching] = useState(false);
   const [battleType, setBattleType] = useState<'pve' | 'pvp'>('pve');
+
+  // Load user's real Pokemon team from chain/localStorage
+  const [myTeam, setMyTeam] = useState<Pokemon[]>([]);
+  const [userStats, setUserStats] = useState({ wins: 0, losses: 0 });
+
+  // Fetch user data
+  useEffect(() => {
+    if (isConnected && address) {
+      // In production, fetch real Pokemon team and stats from chain
+      // For now, show empty state until real data is available
+      setMyTeam([]);
+      setUserStats({ wins: 0, losses: 0 });
+      setMyWins(0);
+      setEnemyWins(0);
+    }
+  }, [isConnected, address]);
 
   const getPokemonImageUrl = (id: number) => {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   };
 
   const getHealthColor = (current: number, max: number) => {
-    const percent = (current / max) * 100;
+    const percent = max > 0 ? (current / max) * 100 : 0;
     if (percent > 50) return 'bg-green-500';
     if (percent > 25) return 'bg-yellow-500';
     return 'bg-red-500';
   };
 
+  const generateEnemy = (): Pokemon => {
+    // In production, generate or fetch real enemy from chain
+    return {
+      id: Math.floor(Math.random() * 150) + 1,
+      name: 'Wild Pokemon',
+      type: 'normal',
+      power: Math.floor(Math.random() * 500) + 100,
+      health: 300,
+      maxHealth: 300,
+      rarity: 'Common',
+      effects: [],
+    };
+  };
+
   const startBattle = (type: 'pve' | 'pvp') => {
+    if (myTeam.length === 0) {
+      setBattleLog(['⚔️ No Pokemon found!', 'Hatch eggs in the AFK page to get your team']);
+      return;
+    }
+
+    const selectedPokemon = myTeam[0];
+    const enemy = generateEnemy();
+
     setBattleType(type);
     setInBattle(true);
-    setMyHealth(myPokemon.maxHealth);
-    setEnemyHealth(enemyPokemon.maxHealth);
-    setBattleLog([`⚔️ ${type === 'pvp' ? 'PvP Battle' : 'Duel'} Started!`, `Your ${myPokemon.name} vs ${enemyPokemon.name}`]);
+    setMyPokemon(selectedPokemon);
+    setEnemyPokemon(enemy);
+    setMyHealth(selectedPokemon.maxHealth);
+    setEnemyHealth(enemy.maxHealth);
+    setBattleLog([`⚔️ ${type === 'pvp' ? 'PvP Battle' : 'Duel'} Started!`, `Your ${selectedPokemon.name} vs ${enemy.name}`]);
     setBattleTurn(0);
     setWinner(null);
+    setAttackEffect(null);
   };
 
   const attack = () => {
-    if (!inBattle || winner) return;
+    if (!inBattle || !myPokemon || !enemyPokemon || winner) return;
 
     const newTurn = battleTurn + 1;
     setBattleTurn(newTurn);
 
     // Calculate damage with rarity bonuses
-    const rarityBonus = {
-      Common: 1.0, Uncommon: 1.1, Rare: 1.2, Epic: 1.4, Legendary: 1.6, Mythic: 2.0
+    const rarityBonus: Record<string, number> = {
+      Common: 1.0, Uncommon: 1.1, Rare: 1.2, Epic: 1.4, Legendary: 1.6, Mythic: 2.0,
     };
-    
-    const myDamage = Math.floor(myPokemon.power * (0.8 + Math.random() * 0.4) * rarityBonus[myPokemon.rarity]);
-    const newEnemyHealth = Math.max(0, enemyHealth - myDamage);
-    
+
+    const playerDamage = Math.floor(myPokemon.power * (0.8 + Math.random() * 0.4) * (rarityBonus[myPokemon.rarity] || 1));
+    const enemyDamage = Math.floor(enemyPokemon.power * (0.8 + Math.random() * 0.4));
+
+    const newEnemyHealth = Math.max(0, enemyHealth - playerDamage);
     setEnemyHealth(newEnemyHealth);
-    setBattleLog(prev => [...prev.slice(-4), `🎯 ${myPokemon.name} deals ${myDamage} damage!`, `✨ ${myPokemon.rarity} bonus applied!`]);
     setAttackEffect('my');
 
-    setTimeout(() => setAttackEffect(null), 500);
+    setBattleLog((prev) => [
+      ...prev,
+      `Turn ${newTurn}: Your ${myPokemon.name} deals ${playerDamage} damage!`,
+    ]);
+
+    setTimeout(() => setAttackEffect(null), 300);
 
     if (newEnemyHealth <= 0) {
-      setWinner(`Your ${myPokemon.name}`);
-      setBattleLog(prev => [...prev, `🏆 ${myPokemon.name} wins!`, `💰 +250 $MNMOON won!`]);
-      setMyWins(prev => prev + 1);
+      setWinner(`Your ${myPokemon.name} Wins!`);
+      setMyWins((w) => w + 1);
+      setBattleLog((prev) => [...prev, `🎉 Victory! You earned rewards!`]);
       return;
     }
 
-    // Enemy attack (after delay)
     setTimeout(() => {
-      const enemyDamage = Math.floor(enemyPokemon.power * (0.6 + Math.random() * 0.3) * rarityBonus[enemyPokemon.rarity]);
-      const newMyHealth = Math.max(0, myHealth - enemyDamage);
-      setMyHealth(newMyHealth);
-      setBattleLog(prev => [...prev.slice(-4), `💥 ${enemyPokemon.name} deals ${enemyDamage} damage!`, `✨ ${enemyPokemon.rarity} bonus applied!`]);
+      const newPlayerHealth = Math.max(0, myHealth - enemyDamage);
+      setMyHealth(newPlayerHealth);
       setAttackEffect('enemy');
 
-      setTimeout(() => setAttackEffect(null), 500);
+      setBattleLog((prev) => [
+        ...prev,
+        `Turn ${newTurn}: ${enemyPokemon.name} deals ${enemyDamage} damage!`,
+      ]);
 
-      if (newMyHealth <= 0) {
-        setWinner(`Enemy ${enemyPokemon.name}`);
-        setBattleLog(prev => [...prev, `💀 ${enemyPokemon.name} wins!`, `🔥 Streak ended...`]);
-        setEnemyWins(prev => prev + 1);
+      setTimeout(() => setAttackEffect(null), 300);
+
+      if (newPlayerHealth <= 0) {
+        setWinner(`${enemyPokemon.name} Wins!`);
+        setEnemyWins((w) => w + 1);
+        setBattleLog((prev) => [...prev, `💀 Defeat! Try again!`]);
       }
-    }, 1000);
+    }, 600);
   };
 
   const leaveBattle = () => {
     setInBattle(false);
+    setMyPokemon(null);
+    setEnemyPokemon(null);
     setWinner(null);
-    setBattleLog(['⚔️ Welcome to the Battle Arena!']);
-    setAttackEffect(null);
-    setShowPvPMatchmaking(false);
+    setBattleLog(['⚔️ Welcome to the Battle Arena!', 'Connect your wallet to start battling']);
   };
 
-  const selectMyPokemon = (pokemon: Pokemon) => {
-    if (inBattle) return;
-    setMyPokemon(pokemon);
-    setMyHealth(pokemon.maxHealth);
+  const surrender = () => {
+    if (!enemyPokemon || !myPokemon) return;
+    setWinner(`${enemyPokemon.name} Wins!`);
+    setEnemyWins((w) => w + 1);
+    setBattleLog((prev) => [...prev, `🏳️ You surrendered!`]);
   };
 
-  const selectEnemyPokemon = (pokemon: Pokemon) => {
-    if (inBattle) return;
-    setEnemyPokemon(pokemon);
-    setEnemyHealth(pokemon.maxHealth);
-  };
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50">
+            <Sword className="h-16 w-16 text-cyan-400 mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Connect Wallet</h3>
+            <p className="text-gray-400 text-center mb-4">Connect your wallet to access the Battle Arena</p>
+            <p className="text-sm text-gray-500">Battle other trainers and earn rewards!</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const startPvPSearch = () => {
-    setShowPvPMatchmaking(true);
-    setPvpSearching(true);
-    
-    // Simulate matchmaking
-    setTimeout(() => {
-      setPvpSearching(false);
-      setBattleType('pvp');
-      setInBattle(true);
-      setMyHealth(myPokemon.maxHealth);
-      setEnemyHealth(enemyPokemon.maxHealth);
-      setBattleLog(['⚔️ PvP Match Found!', 'Fighting against Trainer_XYZ', `Your ${myPokemon.name} vs Mewtwo`]);
-      setBattleTurn(0);
-      setWinner(null);
-    }, 3000);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-      {/* Header */}
-      <div className="bg-slate-800/50 border-b border-white/5 py-6">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-400 hover:text-white">←</Link>
-              <h1 className="text-3xl font-bold text-white">⚔️ Battle Arena</h1>
+  if (inBattle && myPokemon && enemyPokemon) {
+    return (
+      <div className="min-h-screen py-4">
+        <div className="mx-auto max-w-4xl px-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-slate-900/50 rounded-3xl p-6 border border-slate-700/50"
+          >
+            {/* Battle Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={leaveBattle}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <span className="text-xl">←</span>
+                </button>
+                <h1 className="text-xl font-bold text-white">⚔️ Battle Arena</h1>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-gray-400">Turn: <span className="text-white font-bold">{battleTurn}</span></span>
+                <span className={`px-3 py-1 rounded-full ${battleType === 'pvp' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                  {battleType === 'pvp' ? 'PvP' : 'PvE'}
+                </span>
+              </div>
             </div>
 
-            {!inBattle && (
-              <div className="flex items-center space-x-4">
+            {/* Battle Scene */}
+            <div className="relative h-80 rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 mb-6 overflow-hidden">
+              {/* Environment */}
+              <div className="absolute inset-0 bg-[url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/back/6.gif')] bg-cover bg-center opacity-20" />
+
+              {/* Enemy Pokemon */}
+              <motion.div
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="absolute top-10 right-20"
+              >
+                <div className="relative">
+                  <Image
+                    src={getPokemonImageUrl(enemyPokemon.id)}
+                    alt={enemyPokemon.name}
+                    width={160}
+                    height={160}
+                    className={`transform scale-x-[-1] ${attackEffect === 'my' ? 'animate-pulse' : ''}`}
+                  />
+                  {attackEffect === 'my' && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1 }}
+                      animate={{ scale: 2, opacity: 0 }}
+                      className="absolute inset-0 bg-red-500 rounded-full blur-xl"
+                    />
+                  )}
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 bg-slate-700 rounded-full h-3">
+                    <div
+                      className={`h-full rounded-full ${getHealthColor(enemyHealth, enemyPokemon.maxHealth)} transition-all duration-300`}
+                      style={{ width: `${(enemyHealth / enemyPokemon.maxHealth) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* My Pokemon */}
+              <motion.div
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="absolute bottom-10 left-20"
+              >
+                <div className="relative">
+                  <Image
+                    src={getPokemonImageUrl(myPokemon.id)}
+                    alt={myPokemon.name}
+                    width={140}
+                    height={140}
+                    className={attackEffect === 'enemy' ? 'animate-pulse' : ''}
+                  />
+                  {attackEffect === 'enemy' && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1 }}
+                      animate={{ scale: 2, opacity: 0 }}
+                      className="absolute inset-0 bg-red-500 rounded-full blur-xl"
+                    />
+                  )}
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-28 bg-slate-700 rounded-full h-3">
+                    <div
+                      className={`h-full rounded-full ${getHealthColor(myHealth, myPokemon.maxHealth)} transition-all duration-300`}
+                      style={{ width: `${(myHealth / myPokemon.maxHealth) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Health Bars */}
+              <div className="absolute top-4 left-4 right-4 flex justify-between">
+                <div className="bg-slate-800/80 px-4 py-2 rounded-xl">
+                  <p className="text-white font-bold">{enemyPokemon.name}</p>
+                  <p className="text-gray-400 text-sm">{enemyPokemon.power} ⚔️</p>
+                </div>
+                <div className="bg-slate-800/80 px-4 py-2 rounded-xl text-right">
+                  <p className="text-white font-bold">{myPokemon.name}</p>
+                  <p className="text-gray-400 text-sm">{myPokemon.power} ⚔️</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Battle Log */}
+            <div className="bg-slate-800/50 rounded-xl p-4 mb-4 h-32 overflow-y-auto">
+              {battleLog.map((log, i) => (
+                <p key={i} className="text-sm text-gray-300 mb-1">{log}</p>
+              ))}
+            </div>
+
+            {/* Winner Announcement */}
+            {winner ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-2xl p-6 border border-amber-500/30 text-center"
+              >
+                <Trophy className="h-12 w-12 text-amber-400 mx-auto mb-2" />
+                <h3 className="text-xl font-bold text-amber-400 mb-2">🏆 {winner}</h3>
+                <p className="text-gray-400 mb-4">Battle Complete!</p>
                 <button
-                  onClick={() => startBattle('pve')}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white"
+                  onClick={leaveBattle}
+                  className="w-full py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors"
                 >
-                  <Sword className="h-4 w-4" />
-                  <span>Quick Duel</span>
+                  Return to Arena
+                </button>
+              </motion.div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={attack}
+                  className="flex-1 py-4 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold text-lg hover:opacity-90 transition-opacity"
+                >
+                  ⚔️ Attack
                 </button>
                 <button
-                  onClick={startPvPSearch}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 font-bold text-white"
+                  onClick={surrender}
+                  className="px-6 py-4 rounded-xl bg-slate-700 text-gray-300 font-bold hover:bg-slate-600 transition-colors"
                 >
-                  <Users className="h-4 w-4" />
-                  <span>Find Match</span>
+                  🏳️
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Score Display */}
-          {!inBattle && (
-            <div className="flex justify-center space-x-12 mt-6">
-              <div className="text-center">
-                <div className="flex items-center space-x-2">
-                  <Trophy className="h-6 w-6 text-amber-400" />
-                  <p className="text-2xl font-bold text-green-400">{myWins}</p>
-                </div>
-                <p className="text-sm text-gray-400">Your Wins</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-500">VS</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center space-x-2">
-                  <Skull className="h-6 w-6 text-red-400" />
-                  <p className="text-2xl font-bold text-red-400">{enemyWins}</p>
-                </div>
-                <p className="text-sm text-gray-400">Enemy Wins</p>
-              </div>
-            </div>
-          )}
+          </motion.div>
         </div>
       </div>
+    );
+  }
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {!inBattle ? (
-          // Selection Screen
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Your Team */}
+  return (
+    <div className="min-h-screen py-8">
+      <div className="mx-auto max-w-4xl px-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <Shield className="h-5 w-5 text-green-400" />
-                <span>Your Team</span>
-              </h2>
-              <div className="grid grid-cols-3 gap-3">
-                {myTeam.map((pokemon) => {
-                  const rarity = rarityColors[pokemon.rarity];
-                  return (
-                    <button
-                      key={pokemon.id}
-                      onClick={() => selectMyPokemon(pokemon)}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        myPokemon.id === pokemon.id
-                          ? `${rarity.border} bg-gradient-to-br ${rarity.gradient}/20`
-                          : 'border-white/10 bg-slate-800/50 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="relative">
-                        <Image
-                          src={getPokemonImageUrl(pokemon.id)}
-                          alt={pokemon.name}
-                          width={64}
-                          height={64}
-                          className="object-contain mx-auto"
-                        />
-                        {pokemon.rarity === 'Mythic' && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-pulse" />
-                        )}
-                      </div>
-                      <p className="font-bold text-white text-xs mt-1 truncate">{pokemon.name}</p>
-                      <p className={`text-xs ${rarity.text}`}>{pokemon.power} ⚔️</p>
-                      <p className={`text-xs ${rarity.text}`}>{pokemon.rarity}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Enemy Team */}
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <Target className="h-5 w-5 text-red-400" />
-                <span>Opponent</span>
-              </h2>
-              <div className="grid grid-cols-3 gap-3">
-                {enemyTeam.map((pokemon) => {
-                  const rarity = rarityColors[pokemon.rarity];
-                  return (
-                    <button
-                      key={pokemon.id}
-                      onClick={() => selectEnemyPokemon(pokemon)}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        enemyPokemon.id === pokemon.id
-                          ? `${rarity.border} bg-gradient-to-br ${rarity.gradient}/20`
-                          : 'border-white/10 bg-slate-800/50 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="relative">
-                        <Image
-                          src={getPokemonImageUrl(pokemon.id)}
-                          alt={pokemon.name}
-                          width={64}
-                          height={64}
-                          className="object-contain mx-auto"
-                        />
-                        {pokemon.rarity === 'Mythic' && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-pulse" />
-                        )}
-                        {pokemon.rarity === 'Legendary' && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-amber-500" />
-                        )}
-                      </div>
-                      <p className="font-bold text-white text-xs mt-1 truncate">{pokemon.name}</p>
-                      <p className={`text-xs ${rarity.text}`}>{pokemon.power} ⚔️</p>
-                      <p className={`text-xs ${rarity.text}`}>{pokemon.rarity}</p>
-                    </button>
-                  );
-                })}
-              </div>
+              <h1 className="text-3xl font-bold text-white">⚔️ Battle Arena</h1>
+              <p className="text-gray-400 text-sm mt-1">Challenge other trainers!</p>
             </div>
           </div>
-        ) : (
-          // Battle Screen
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Battle Arena */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative bg-slate-800/50 rounded-2xl p-8 border border-white/5 overflow-hidden"
-              >
-                {/* Battle Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20" />
-                
-                {/* Enemy Pokemon */}
-                <div className="relative z-10 text-center mb-8">
-                  <motion.div
-                    animate={attackEffect === 'enemy' ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="relative inline-block">
-                      {enemyPokemon.rarity === 'Mythic' && (
-                        <motion.div
-                          animate={{ opacity: [0.3, 0.6, 0.3] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                          className="absolute -inset-8 bg-red-500/30 rounded-full blur-2xl"
-                        />
-                      )}
-                      <Image
-                        src={getPokemonImageUrl(enemyPokemon.id)}
-                        alt={enemyPokemon.name}
-                        width={180}
-                        height={180}
-                        className="object-contain mx-auto"
-                      />
-                    </div>
-                  </motion.div>
-                  
-                  <div className="mt-4 max-w-xs mx-auto">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-white">{enemyPokemon.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded ${rarityColors[enemyPokemon.rarity].bg} ${rarityColors[enemyPokemon.rarity].text}`}>
-                        {enemyPokemon.rarity}
-                      </span>
-                    </div>
-                    <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-                      <motion.div
-                        className={`h-full ${getHealthColor(enemyHealth, enemyPokemon.maxHealth)}`}
-                        animate={{ width: `${(enemyHealth / enemyPokemon.maxHealth) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">{enemyHealth}/{enemyPokemon.maxHealth} HP</p>
-                  </div>
-                </div>
 
-                {/* VS Divider */}
-                <div className="flex items-center justify-center my-4">
-                  <span className="text-2xl font-bold text-gray-500">VS</span>
-                </div>
-
-                {/* My Pokemon */}
-                <div className="relative z-10 text-center">
-                  <motion.div
-                    animate={attackEffect === 'my' ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="relative inline-block">
-                      {myPokemon.rarity === 'Mythic' && (
-                        <motion.div
-                          animate={{ opacity: [0.3, 0.6, 0.3] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                          className="absolute -inset-8 bg-red-500/30 rounded-full blur-2xl"
-                        />
-                      )}
-                      <Image
-                        src={getPokemonImageUrl(myPokemon.id)}
-                        alt={myPokemon.name}
-                        width={160}
-                        height={160}
-                        className="object-contain mx-auto"
-                      />
-                    </div>
-                  </motion.div>
-                  
-                  <div className="mt-4 max-w-xs mx-auto">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-white">{myPokemon.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded ${rarityColors[myPokemon.rarity].bg} ${rarityColors[myPokemon.rarity].text}`}>
-                        {myPokemon.rarity}
-                      </span>
-                    </div>
-                    <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-                      <motion.div
-                        className={`h-full ${getHealthColor(myHealth, myPokemon.maxHealth)}`}
-                        animate={{ width: `${(myHealth / myPokemon.maxHealth) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">{myHealth}/{myPokemon.maxHealth} HP</p>
-                  </div>
-                </div>
-
-                {/* Attack Button */}
-                {battleType === 'pve' && (
-                  <div className="mt-8 flex justify-center">
-                    <button
-                      onClick={attack}
-                      disabled={!!winner}
-                      className="px-12 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-white text-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ⚔️ Attack!
-                    </button>
-                  </div>
-                )}
-              </motion.div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl p-4 border border-green-500/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-5 h-5 text-green-400" />
+                <span className="text-gray-300 text-sm">Wins</span>
+              </div>
+              <p className="text-3xl font-bold text-white">{myWins}</p>
             </div>
-
-            {/* Battle Info */}
-            <div className="space-y-4">
-              {/* Battle Log */}
-              <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/5 h-64 overflow-y-auto">
-                <h3 className="font-bold text-white mb-2">📜 Battle Log</h3>
-                <div className="space-y-1">
-                  {battleLog.map((log, i) => (
-                    <p key={i} className={`text-sm ${log.includes('wins') ? 'text-amber-400' : log.includes('damage') ? 'text-gray-300' : 'text-gray-400'}`}>
-                      {log}
-                    </p>
-                  ))}
-                </div>
+            <div className="bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-2xl p-4 border border-red-500/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Skull className="w-5 h-5 text-red-400" />
+                <span className="text-gray-300 text-sm">Losses</span>
               </div>
+              <p className="text-3xl font-bold text-white">{enemyWins}</p>
+            </div>
+          </div>
 
-              {/* Battle Stats */}
-              <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/5">
-                <h3 className="font-bold text-white mb-2">📊 Battle Stats</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Turn</span>
-                    <span className="text-white font-bold">{battleTurn}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Battle Type</span>
-                    <span className="text-white font-bold">{battleType === 'pve' ? 'PvE Duel' : 'PvP Match'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Win Rate</span>
-                    <span className="text-green-400 font-bold">
-                      {Math.round((myWins / (myWins + enemyWins)) * 100)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
+          {/* Battle Modes */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => startBattle('pve')}
+              className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-6 border border-blue-500/30 hover:opacity-90 transition-opacity text-left"
+            >
+              <Target className="w-10 h-10 text-blue-400 mb-3" />
+              <h3 className="text-lg font-bold text-white mb-1">PvE Duel</h3>
+              <p className="text-gray-400 text-sm">Challenge AI opponents</p>
+            </button>
+            <button
+              onClick={() => {
+                setShowPvPMatchmaking(true);
+                setPvpSearching(true);
+              }}
+              className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl p-6 border border-purple-500/30 hover:opacity-90 transition-opacity text-left"
+            >
+              <Users className="w-10 h-10 text-purple-400 mb-3" />
+              <h3 className="text-lg font-bold text-white mb-1">PvP Battle</h3>
+              <p className="text-gray-400 text-sm">Challenge real players</p>
+            </button>
+          </div>
 
-              {/* Winner Announcement */}
-              {winner && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-2xl p-6 border border-amber-500/30 text-center"
+          {/* My Team */}
+          <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Your Team</h2>
+            {myTeam.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">🥚</div>
+                <p className="text-gray-400 mb-2">No Pokemon in your team</p>
+                <p className="text-gray-500 text-sm">Hatch eggs in the AFK page to build your team!</p>
+                <Link
+                  href="/afk"
+                  className="inline-block mt-4 px-6 py-2 bg-cyan-500/20 text-cyan-400 rounded-xl hover:bg-cyan-500/30 transition-colors"
                 >
-                  <Trophy className="h-12 w-12 text-amber-400 mx-auto mb-2" />
-                  <h3 className="text-xl font-bold text-amber-400 mb-2">🏆 {winner}</h3>
-                  <p className="text-gray-400 mb-4">Battle Complete!</p>
-                  <button
-                    onClick={leaveBattle}
-                    className="w-full py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition-colors"
+                  Go to AFK Page
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {myTeam.map((pokemon, i) => (
+                  <div
+                    key={i}
+                    className={`bg-slate-700/50 rounded-xl p-4 border ${rarityColors[pokemon.rarity].border}`}
                   >
-                    Return to Arena
-                  </button>
-                </motion.div>
-              )}
-            </div>
+                    <Image
+                      src={getPokemonImageUrl(pokemon.id)}
+                      alt={pokemon.name}
+                      width={64}
+                      height={64}
+                      className="mx-auto mb-2"
+                    />
+                    <p className="text-white font-bold text-center text-sm">{pokemon.name}</p>
+                    <p className={`text-xs text-center ${rarityColors[pokemon.rarity].text}`}>{pokemon.rarity}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </motion.div>
       </div>
 
       {/* PvP Matchmaking Modal */}
@@ -523,6 +476,15 @@ export default function ArenaPage() {
                       />
                     ))}
                   </div>
+                  <button
+                    onClick={() => {
+                      setShowPvPMatchmaking(false);
+                      setPvpSearching(false);
+                    }}
+                    className="mt-6 px-6 py-2 bg-slate-700 text-white rounded-xl hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
                 </>
               ) : (
                 <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full">

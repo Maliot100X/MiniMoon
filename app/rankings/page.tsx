@@ -6,6 +6,7 @@ import { Trophy, TrendingUp, Coins, Sword, Star, Search, RefreshCw, Filter, User
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAccount } from 'wagmi';
+import { formatEther } from 'viem';
 
 type RankingType = 'power' | 'arena' | 'wealth' | 'quests';
 
@@ -31,42 +32,6 @@ interface RankingPlayer {
   points?: number;
 }
 
-const rankings: Record<string, RankingPlayer[]> = {
-  power: [
-    { rank: 1, username: 'DragonMaster', wallet: '0x1234...5678', farcaster: '@dragonmaster', avatar: 150, power: 15420, level: 88, badge: '👑' },
-    { rank: 2, username: 'PokemonKing', wallet: '0xabcd...efgh', farcaster: '@pokeking', avatar: 6, power: 14850, level: 85, badge: '⭐' },
-    { rank: 3, username: 'BattlePro', wallet: '0x9876...5432', farcaster: '@battlepro', avatar: 68, power: 14200, level: 82, badge: '⚔️' },
-    { rank: 4, username: 'Collector99', avatar: 149, power: 13500, level: 78, badge: '📚' },
-    { rank: 5, username: 'ShadowHunter', avatar: 491, power: 12800, level: 75, badge: '🌑' },
-    { rank: 6, username: 'AquaLegend', avatar: 130, power: 12100, level: 72, badge: '🌊' },
-    { rank: 7, username: 'ThunderBolt', avatar: 25, power: 11500, level: 69, badge: '⚡' },
-    { rank: 8, username: 'MysticMage', avatar: 282, power: 10900, level: 66, badge: '🧙' },
-    { rank: 9, username: 'FireStorm', avatar: 257, power: 10300, level: 63, badge: '🔥' },
-    { rank: 10, username: 'IceKing', avatar: 144, power: 9800, level: 60, badge: '❄️' },
-  ],
-  arena: [
-    { rank: 1, username: 'ArenaGod', farcaster: '@arenagod', avatar: 149, wins: 999, losses: 12, elo: 2850, winRate: '98.8%' },
-    { rank: 2, username: 'PvPChampion', farcaster: '@pvpchamp', avatar: 68, wins: 856, losses: 45, elo: 2720, winRate: '95.0%' },
-    { rank: 3, username: 'BattleMaster', farcaster: '@battlemaster', avatar: 150, wins: 742, losses: 67, elo: 2580, winRate: '91.7%' },
-    { rank: 4, username: 'FighterPro', avatar: 257, wins: 689, losses: 89, elo: 2450, winRate: '88.5%' },
-    { rank: 5, username: 'TournamentKing', avatar: 384, wins: 612, losses: 102, elo: 2320, winRate: '85.7%' },
-  ],
-  wealth: [
-    { rank: 1, username: 'CryptoKing', wallet: '0xking...0001', avatar: 150, tokens: 2500000, daily: 15000, NFTs: 156 },
-    { rank: 2, username: 'TokenMillionaire', avatar: 6, tokens: 1850000, daily: 12000, NFTs: 142 },
-    { rank: 3, username: 'MarketTycoon', avatar: 149, tokens: 1420000, daily: 9800, NFTs: 128 },
-    { rank: 4, username: 'DiamondHands', avatar: 130, tokens: 1180000, daily: 8500, NFTs: 115 },
-    { rank: 5, username: 'WealthyTrainer', avatar: 25, tokens: 950000, daily: 7200, NFTs: 98 },
-  ],
-  quests: [
-    { rank: 1, username: 'QuestMaster', farcaster: '@questmaster', avatar: 282, completed: 2847, streak: 156, points: 142350 },
-    { rank: 2, username: 'DailyGrinder', avatar: 257, completed: 2456, streak: 89, points: 122800 },
-    { rank: 3, username: 'AchievementHunter', avatar: 94, completed: 2123, streak: 67, points: 106150 },
-    { rank: 4, username: 'TaskDestroyer', avatar: 68, completed: 1890, streak: 45, points: 94500 },
-    { rank: 5, username: 'MissionCompleted', avatar: 9, completed: 1656, streak: 34, points: 82800 },
-  ],
-};
-
 // Prize information
 const PRIZES = {
   power: [
@@ -86,7 +51,45 @@ export default function RankingsPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [countdown, setCountdown] = useState(30);
 
-  const currentRankings = rankings[activeTab];
+  // Real rankings data - in production, fetch from chain/API
+  const [rankings, setRankings] = useState<RankingPlayer[]>([]);
+  const [userRank, setUserRank] = useState<{ rank: number; score: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch rankings from chain/API
+  const fetchRankings = useCallback(async () => {
+    setLoading(true);
+    try {
+      // In production, fetch real rankings from contract/API
+      // For now, show empty state until real data is available
+      setRankings([]);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching rankings:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch user rank
+  const fetchUserRank = useCallback(async () => {
+    if (!address) {
+      setUserRank(null);
+      return;
+    }
+    try {
+      // In production, fetch real user rank from chain
+      setUserRank(null);
+    } catch (error) {
+      console.error('Error fetching user rank:', error);
+      setUserRank(null);
+    }
+  }, [address]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchRankings();
+    fetchUserRank();
+  }, [fetchRankings, fetchUserRank]);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -105,303 +108,252 @@ export default function RankingsPage() {
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate fetching fresh data
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setCountdown(30);
+    await Promise.all([fetchRankings(), fetchUserRank()]);
     setLastUpdated(new Date());
     setIsRefreshing(false);
-  }, []);
-
-  const getAvatarUrl = (id?: number) => {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id || 1}.png`;
   };
 
-  const tabs = [
-    { key: 'power', label: '⚔️ Power', icon: Sword },
-    { key: 'arena', label: '🏆 Arena', icon: Trophy },
-    { key: 'wealth', label: '💰 Wealth', icon: Coins },
-    { key: 'quests', label: '📅 Quests', icon: Star },
-  ];
+  const currentRankings = rankings;
 
-  const getPlayerScore = (player: RankingPlayer) => {
-    if (activeTab === 'power') return player.power?.toLocaleString() || '0';
-    if (activeTab === 'arena') return `${player.elo} ELO`;
-    if (activeTab === 'wealth') return `${player.tokens?.toLocaleString()} $MNMOON`;
-    return `${player.points?.toLocaleString()} pts`;
-  };
-
-  // Search players by wallet, FID, or FarCaster name
   const searchPlayers = useMemo(() => {
     if (!searchQuery.trim()) return currentRankings;
     const query = searchQuery.toLowerCase();
     return currentRankings.filter(
       (player) =>
-        player.username.toLowerCase().includes(query) ||
+        player.username?.toLowerCase().includes(query) ||
         player.wallet?.toLowerCase().includes(query) ||
-        player.farcaster?.toLowerCase().includes(query) ||
-        player.fid?.toString().includes(query)
+        player.fid?.toString().includes(query) ||
+        player.farcaster?.toLowerCase().includes(query)
     );
   }, [currentRankings, searchQuery]);
 
-  const formatLastUpdated = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+  const getAvatarUrl = (id: number) => {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+  };
+
+  const getBadge = (rank: number) => {
+    if (rank === 1) return { emoji: '👑', color: 'text-yellow-400' };
+    if (rank === 2) return { emoji: '🥈', color: 'text-gray-300' };
+    if (rank === 3) return { emoji: '🥉', color: 'text-amber-600' };
+    return null;
+  };
+
+  const tabIcons: Record<RankingType, React.ReactNode> = {
+    power: <Sword className="w-4 h-4" />,
+    arena: <TrendingUp className="w-4 h-4" />,
+    wealth: <Coins className="w-4 h-4" />,
+    quests: <Star className="w-4 h-4" />,
+  };
+
+  const tabLabels: Record<RankingType, string> = {
+    power: '⚔️ Power',
+    arena: '🏆 Arena',
+    wealth: '💰 Wealth',
+    quests: '✨ Quests',
+  };
+
+  const scoreLabels: Record<RankingType, string> = {
+    power: 'Power',
+    arena: 'ELO',
+    wealth: '$MNMOON',
+    quests: 'Points',
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-      <div className="bg-slate-800/50 border-b border-white/5 py-6">
-        <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen pb-24">
+      <div className="mx-auto max-w-4xl px-4 py-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-400 hover:text-white">←</Link>
-              <h1 className="text-3xl font-bold text-white">🏆 Global Rankings</h1>
+            <div>
+              <h1 className="text-3xl font-bold text-white">🏆 Rankings</h1>
+              <p className="text-gray-400 text-sm mt-1">Compete for real prizes!</p>
             </div>
-            <div className="flex items-center space-x-2">
-              {/* Auto-refresh toggle */}
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  autoRefresh
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    : 'bg-slate-700/50 text-gray-400 border border-white/10'
-                }`}
-              >
-                <Clock className="h-3 w-3" />
-                <span>{autoRefresh ? `${countdown}s` : 'Off'}</span>
-              </button>
-              {/* Manual refresh */}
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
-              </button>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="text-gray-300 text-sm">{isRefreshing ? 'Refreshing...' : `${countdown}s`}</span>
+            </button>
+          </div>
+
+          {/* Prize Banner */}
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-pink-500/20 border border-amber-500/30">
+            <div className="flex items-center gap-3 mb-3">
+              <Trophy className="w-6 h-6 text-amber-400" />
+              <h3 className="text-lg font-bold text-white">Weekly Power Rankings</h3>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              {PRIZES.power.map((prize) => (
+                <div
+                  key={prize.place}
+                  className={`flex-1 min-w-[100px] p-3 rounded-xl bg-gradient-to-br ${prize.color} bg-opacity-20 text-center`}
+                >
+                  <p className="text-xs text-gray-300">#{prize.place}</p>
+                  <p className="text-lg font-bold text-white">{prize.reward}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* User Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {(Object.keys(tabLabels) as RankingType[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all ${
+                  activeTab === tab
+                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                    : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
+                }`}
+              >
+                {tabIcons[tab]}
+                <span className="text-sm font-medium">{tabLabels[tab]}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type="text"
               placeholder="Search by wallet, FID, or FarCaster name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-700/50 text-white text-sm placeholder-gray-400 border border-white/10 focus:border-amber-500/50 focus:outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
           </div>
 
-          {/* Search results indicator */}
-          {searchQuery && (
-            <div className="mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
-              Found {searchPlayers.length} player{searchPlayers.length !== 1 ? 's' : ''} matching "{searchQuery}"
-            </div>
-          )}
-
-          <div className="flex space-x-2 overflow-x-auto pb-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setActiveTab(tab.key as RankingType);
-                  setSearchQuery('');
-                }}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition-all whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                    : 'bg-slate-700/50 text-gray-400 hover:text-white'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {activeTab !== 'arena' && (
-            <div className="flex space-x-2 mt-4">
-              {(['all', 'weekly', 'daily'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setTimeFilter(filter)}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                    timeFilter === filter
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Last updated indicator */}
-          <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-            <span>Last updated: {formatLastUpdated(lastUpdated)}</span>
-            <span>{currentRankings.length} players</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Prize Info Banner */}
-      {activeTab === 'power' && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 border-b border-amber-500/20 py-3">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex items-center justify-center space-x-6">
-              {PRIZES.power.map((prize) => (
-                <div key={prize.place} className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 rounded text-xs font-bold bg-gradient-to-r ${prize.color} text-white`}>
-                    #{prize.place}
-                  </span>
-                  <span className="text-sm text-amber-400">{prize.reward}</span>
+          {/* Rankings List */}
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <motion.div
-          key={`${activeTab}-${searchQuery}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {searchPlayers.length >= 3 && !searchQuery && (
-            <div className="flex justify-center items-end space-x-4 mb-8">
-              {[1, 0, 2].map((idx) => {
-                const player = searchPlayers[idx];
-                if (!player) return null;
-                return (
-                  <motion.div
-                    key={player.rank}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="text-center"
-                  >
-                    <div className="relative mb-2">
-                      {idx === 0 && <div className="absolute -inset-2 bg-amber-500/30 rounded-full blur-lg" />}
-                      <Image
-                        src={getAvatarUrl(player.avatar)}
-                        alt={player.username}
-                        width={idx === 0 ? 96 : idx === 1 ? 64 : 56}
-                        height={idx === 0 ? 96 : idx === 1 ? 64 : 56}
-                        className="object-contain mx-auto relative"
-                      />
-                      <div className={`absolute -top-2 -right-2 h-8 w-8 rounded-full flex items-center justify-center text-lg font-bold ${
-                        idx === 0 ? 'bg-amber-500 text-white' :
-                        idx === 1 ? 'bg-slate-400 text-slate-800' :
-                        'bg-orange-700 text-white'
-                      }`}>
-                        {['🥇', '🥈', '🥉'][idx]}
+              ) : searchPlayers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Trophy className="h-16 w-16 mx-auto text-gray-600 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {searchQuery ? 'No players found' : 'No rankings yet'}
+                  </h3>
+                  <p className="text-gray-400">
+                    {searchQuery
+                      ? 'Try searching with a different wallet, FID, or FarCaster name'
+                      : 'Connect your wallet and start playing to appear on the leaderboard!'}
+                  </p>
+                </div>
+              ) : (
+                searchPlayers.map((player) => {
+                  const badge = getBadge(player.rank);
+                  return (
+                    <motion.div
+                      key={`${player.wallet}-${player.rank}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                        player.rank <= 3
+                          ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20'
+                          : 'bg-slate-800/50 border border-slate-700/30'
+                      } ${address?.toLowerCase() === player.wallet?.toLowerCase() ? 'ring-2 ring-cyan-500/50' : ''}`}
+                    >
+                      <div className={`text-2xl font-bold w-12 text-center ${player.rank <= 3 ? 'text-amber-400' : 'text-gray-400'}`}>
+                        #{player.rank}
                       </div>
-                    </div>
-                    <p className={`font-bold ${idx === 0 ? 'text-amber-400 text-lg' : 'text-white text-sm'}`}>
-                      {player.username}
-                    </p>
-                    <p className="text-gray-400 text-xs">{getPlayerScore(player)}</p>
-                    {player.farcaster && (
-                      <p className="text-xs text-purple-400 mt-1">{player.farcaster}</p>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+                      {player.avatar && (
+                        <Image
+                          src={getAvatarUrl(player.avatar)}
+                          alt={player.username}
+                          width={48}
+                          height={48}
+                          className="rounded-lg"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-white truncate">
+                            {player.username || 'Unknown Trainer'}
+                          </h3>
+                          {badge && <span className={`text-xl ${badge.color}`}>{badge.emoji}</span>}
+                          {player.farcaster && (
+                            <a
+                              href={`https://farcaster.xyz/${player.farcaster.replace('@', '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-400 hover:text-cyan-400"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                          {player.level && <span>Lvl {player.level}</span>}
+                          {player.wallet && (
+                            <span className="truncate max-w-[100px]">{player.wallet}</span>
+                          )}
+                          {player.fid && <span className="flex items-center gap-1">FID: {player.fid}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-cyan-400">
+                          {player.power?.toLocaleString() ||
+                            player.elo?.toLocaleString() ||
+                            player.tokens?.toLocaleString() ||
+                            player.points?.toLocaleString() ||
+                            '0'}
+                        </p>
+                        <p className="text-xs text-gray-500">{scoreLabels[activeTab]}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </div>
 
-          <div className="space-y-2">
-            {searchPlayers.map((player, index) => (
-              <motion.div
-                key={player.rank}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
-                className={`flex items-center p-4 rounded-xl bg-slate-800/50 border border-white/5 hover:border-white/10 transition-all ${
-                  player.rank <= 3 ? 'border-amber-500/30' : ''
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold mr-4 ${
-                  player.rank === 1 ? 'bg-amber-500/20 text-amber-400' :
-                  player.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
-                  player.rank === 3 ? 'bg-orange-700/20 text-orange-500' :
-                  'bg-slate-700 text-gray-400'
-                }`}>
-                  {player.rank <= 3 ? ['🥇', '🥈', '🥉'][player.rank - 1] : player.rank}
+          {/* User Position */}
+          {isConnected && userRank && (
+            <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400">Your Position</p>
+                  <p className="text-2xl font-bold text-white">#{userRank.rank}</p>
                 </div>
-
-                <Image
-                  src={getAvatarUrl(player.avatar)}
-                  alt={player.username}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 object-contain mr-4"
-                />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <p className="font-bold text-white truncate">{player.username}</p>
-                    {player.badge && <span>{player.badge}</span>}
-                  </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-400">
-                    {player.level && <span>Level {player.level}</span>}
-                    {player.farcaster && <span className="text-purple-400">{player.farcaster}</span>}
-                    {player.wallet && <span className="text-blue-400">{player.wallet}</span>}
-                  </div>
-                </div>
-
                 <div className="text-right">
-                  <p className="font-bold text-white">{getPlayerScore(player)}</p>
-                  {activeTab === 'wealth' && player.daily && (
-                    <p className="text-sm text-green-400">+{player.daily?.toLocaleString()}/day</p>
-                  )}
-                  {activeTab === 'quests' && player.completed && (
-                    <p className="text-sm text-gray-400">{player.completed?.toLocaleString()} completed</p>
-                  )}
-                  {activeTab === 'arena' && player.winRate && (
-                    <p className="text-sm text-green-400">{player.winRate} WR</p>
-                  )}
+                  <p className="text-gray-400">Your {scoreLabels[activeTab]}</p>
+                  <p className="text-2xl font-bold text-cyan-400">{userRank.score.toLocaleString()}</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {searchPlayers.length === 0 && searchQuery && (
-            <div className="text-center py-12">
-              <User className="h-16 w-16 mx-auto text-gray-600 mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">No players found</h3>
-              <p className="text-gray-400">Try searching with a different wallet, FID, or FarCaster name</p>
+              </div>
             </div>
           )}
 
-          <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400">Your Position</p>
-                <p className="text-2xl font-bold text-white">#234</p>
-              </div>
-              <div className="text-right">
-                <p className="text-gray-400">Your Score</p>
-                <p className="text-2xl font-bold text-amber-400">8,450 ⚔️</p>
+          {/* User not connected */}
+          {isConnected && !userRank && (
+            <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-slate-500/10 to-slate-600/10 border border-slate-500/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400">Your Position</p>
+                  <p className="text-2xl font-bold text-white">-</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-gray-400">Your {scoreLabels[activeTab]}</p>
+                  <p className="text-2xl font-bold text-gray-500">Start playing!</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
     </div>

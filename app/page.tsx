@@ -6,15 +6,15 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 
-// Token info from Streme.fun
+// Placeholder token info - In production, fetch from API
 const TOKEN_INFO = {
   address: '0x184f03750171f9eF32B6267271a7FEE59cb5F387',
   name: '$MNMOON',
   symbol: 'MNMOON',
-  price: 0.015,
-  marketCap: 15000000,
-  holders: 12500,
-  totalStaked: 8500000,
+  price: 0,
+  marketCap: 0,
+  holders: 0,
+  totalStaked: 0,
   apy: 50,
 };
 

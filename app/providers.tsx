@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, createConfig, http, cookieStorage, createStorage } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { useState, useEffect } from 'react';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 // Get project ID from env, or use empty string (Web3Modal will work in limited mode)
 const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '';
@@ -17,6 +18,55 @@ const metadata = {
 
 const chains = [base, baseSepolia] as const;
 
+// Base Account connector for Base Mini App support
+const baseAccountConnector = {
+  id: 'baseAccount',
+  name: 'Base Account',
+  async connect({ chainId }: { chainId?: number } = {}) {
+    // This will be provided by the Base Account SDK in browser context
+    if (typeof window !== 'undefined' && (window as any).baseAccountProvider) {
+      const provider = (window as any).baseAccountProvider;
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      return {
+        accounts,
+        chainId: chainId || base.id,
+      };
+    }
+    // Fallback for non-Base Mini App browsers
+    throw new Error('Base Account not available. Please open in Base app.');
+  },
+  async disconnect() {
+    // Handle disconnect
+  },
+  async getAccounts() {
+    if (typeof window !== 'undefined' && (window as any).baseAccountProvider) {
+      const provider = (window as any).baseAccountProvider;
+      return provider.request({ method: 'eth_accounts' });
+    }
+    return [];
+  },
+  async getChainId() {
+    return base.id;
+  },
+  async getProvider() {
+    if (typeof window !== 'undefined') {
+      return (window as any).baseAccountProvider;
+    }
+  },
+  async switchChain(chainId: number) {
+    // Handle chain switching
+  },
+  onAccountsChanged(accounts: string[]) {
+    // Handle account changes
+  },
+  onChainChanged(chainId: string) {
+    // Handle chain changes
+  },
+  onDisconnect() {
+    // Handle disconnect
+  },
+};
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -28,6 +78,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   const [wagmiConfig, setWagmiConfig] = useState<any>(null);
+  const [miniAppContext, setMiniAppContext] = useState<any>(null);
+  const [isInMiniApp, setIsInMiniApp] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -64,12 +116,28 @@ export function Providers({ children }: { children: React.ReactNode }) {
         });
       }
 
-      // Call FarCaster SDK ready() to hide splash screen
-      // @ts-ignore - Neynar SDK may not be installed
-      if (window.sdk && window.sdk.actions) {
-        // @ts-ignore
-        window.sdk.actions.ready();
-      }
+      // Initialize FarCaster SDK and check if running in mini app
+      const initFarCaster = async () => {
+        try {
+          const inMiniApp = await sdk.isInMiniApp();
+          setIsInMiniApp(inMiniApp);
+
+          if (inMiniApp) {
+            // Get the context which contains user info
+            const context = await sdk.context;
+            setMiniAppContext(context);
+
+            // Call ready() to hide splash screen
+            if (sdk.actions) {
+              sdk.actions.ready();
+            }
+          }
+        } catch (error) {
+          console.log('FarCaster SDK not available:', error);
+        }
+      };
+
+      initFarCaster();
     }
   }, []);
 
@@ -87,7 +155,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }

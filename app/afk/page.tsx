@@ -4,7 +4,22 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance, useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
+
+// $MNMOON Token contract on Base
+const MNMOON_TOKEN_ADDRESS = '0x184f03750171f9eF32B6267271a7FEE59cb5F387';
+
+// Token ABI
+const TOKEN_ABI = [
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
 
 const DROP_RATES = {
   Mythic: 0.01,      // 1% - $1 drop
@@ -78,7 +93,26 @@ const rarityColors: Record<string, { text: string; border: string; glow: string,
 };
 
 export default function AFKPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+
+  // Get native ETH balance from Base
+  const { data: ethBalance } = useBalance({
+    address,
+    chainId: 8453,
+  });
+
+  // Get $MNMOON balance from contract
+  const { data: mnmoonBalance } = useReadContract({
+    address: MNMOON_TOKEN_ADDRESS,
+    abi: TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address && isConnected },
+  });
+
+  // Calculate real balance
+  const mnmoonAmount = mnmoonBalance ? parseFloat(formatEther(mnmoonBalance as bigint)) : 0;
+
   const [activeTab, setActiveTab] = useState<'farming' | 'staking'>('farming');
   const [isFarming, setIsFarming] = useState(false);
   const [energy, setEnergy] = useState(100);
@@ -88,7 +122,7 @@ export default function AFKPage() {
   const [inventory, setInventory] = useState<any[]>([]);
   const [farmingTime, setFarmingTime] = useState(0);
   const [dropAnimation, setDropAnimation] = useState<{ pokemon: any; id: number } | null>(null);
-  
+
   // Staking state
   const [stakedAmount, setStakedAmount] = useState(0);
   const [stakingRewards, setStakingRewards] = useState(0);
@@ -239,7 +273,7 @@ export default function AFKPage() {
               </div>
               <div className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
                 <span>🪙</span>
-                <span className="text-amber-400 font-bold">{(12500 + stakedAmount).toLocaleString()}</span>
+                <span className="text-amber-400 font-bold">{(isConnected ? mnmoonAmount : 0).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -692,7 +726,7 @@ export default function AFKPage() {
                     <button onClick={() => setStakeAmount('100')} className="hover:text-white">100</button>
                     <button onClick={() => setStakeAmount('1000')} className="hover:text-white">1K</button>
                     <button onClick={() => setStakeAmount('10000')} className="hover:text-white">10K</button>
-                    <button onClick={() => setStakeAmount((12500).toString())} className="hover:text-white">All</button>
+                    <button onClick={() => setStakeAmount(Math.floor(mnmoonAmount).toString())} className="hover:text-white">All</button>
                   </div>
                 </div>
                 <div className="flex space-x-3">

@@ -5,19 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import { useSearchParams } from 'next/navigation';
-
-// Mock FarCaster user data
-const getMockUser = (fid: string | null) => {
-  if (!fid) return null;
-  return {
-    fid: parseInt(fid),
-    username: 'pokemon_trainer',
-    displayName: 'Pokemon Trainer',
-    pfp: '🐉',
-    bio: 'MiniMoon Champion | Pokemon Fan',
-    verified: true,
-  };
-};
+import { sdk } from '@farcaster/miniapp-sdk';
 
 export default function FarCasterPage() {
   const { isConnected, address } = useAccount();
@@ -27,23 +15,45 @@ export default function FarCasterPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (fid) {
-        setFarcasterUser(getMockUser(fid));
-      } else {
-        setFarcasterUser({
-          fid: 12345,
-          username: 'minimoon_gamer',
-          displayName: 'MiniMoon Champion',
-          pfp: '🐉',
-          bio: 'Playing MiniMoon on Base | Pokemon Fan | Web3 Gamer',
-          verified: true,
-        });
+    const loadUserData = async () => {
+      try {
+        // Check if we're in a FarCaster Mini App
+        const inMiniApp = await sdk.isInMiniApp();
+
+        if (inMiniApp && fid) {
+          // Get context from FarCaster SDK
+          const context = await sdk.context;
+          if (context?.user) {
+            setFarcasterUser({
+              fid: context.user.fid,
+              username: context.user.username,
+              displayName: context.user.displayName || context.user.username,
+              pfp: context.user.pfpUrl || '🐉',
+            });
+          } else {
+            // Try to use FID from URL
+            setFarcasterUser({
+              fid: parseInt(fid),
+              username: 'player',
+              displayName: 'MiniMoon Player',
+              pfp: '🐉',
+              bio: 'Playing MiniMoon on Base',
+              verified: false,
+            });
+          }
+        } else {
+          // Not in mini app or no FID - show placeholder
+          setFarcasterUser(null);
+        }
+      } catch (error) {
+        console.log('FarCaster SDK error:', error);
+        // Show placeholder if SDK fails
+        setFarcasterUser(null);
       }
       setLoading(false);
     };
-    checkAuth();
+
+    loadUserData();
   }, [fid]);
 
   const quickActions = [
@@ -51,14 +61,6 @@ export default function FarCasterPage() {
     { name: 'Marketplace', icon: '🏪', href: '/marketplace', color: 'from-amber-500 to-yellow-500', desc: 'Buy & Sell' },
     { name: 'My Profile', icon: '👤', href: '/profile', color: 'from-blue-500 to-cyan-500', desc: 'View Stats' },
     { name: 'Shop', icon: '🛒', href: '/marketplace?tab=shop', color: 'from-purple-500 to-pink-500', desc: 'Items' },
-  ];
-
-  const featuredMonsters = [
-    { name: 'Charizard', emoji: '🐉', power: 500, rarity: 'Rare' },
-    { name: 'Pikachu', emoji: '⚡', power: 120, rarity: 'Common' },
-    { name: 'Gengar', emoji: '😈', power: 500, rarity: 'Epic' },
-    { name: 'Dragonite', emoji: '🐲', power: 600, rarity: 'Epic' },
-    { name: 'Mewtwo', emoji: '🧬', power: 1000, rarity: 'Legendary' },
   ];
 
   return (
@@ -88,27 +90,44 @@ export default function FarCasterPage() {
         ) : (
           <div className="space-y-6">
             {/* User Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-amber-500 to-pink-500 flex items-center justify-center text-4xl">
-                  {farcasterUser?.pfp || '🐉'}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <h2 className="text-xl font-bold text-white">{farcasterUser?.displayName}</h2>
-                    {farcasterUser?.verified && (
-                      <span className="text-blue-400">✓</span>
+            {farcasterUser ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-amber-500 to-pink-500 flex items-center justify-center text-4xl overflow-hidden">
+                    {farcasterUser.pfp?.startsWith('http') ? (
+                      <img src={farcasterUser.pfp} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      farcasterUser.pfp || '🐉'
                     )}
                   </div>
-                  <p className="text-purple-400">@{farcasterUser?.username}</p>
-                  <p className="text-sm text-gray-400">FID: {farcasterUser?.fid}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-xl font-bold text-white">{farcasterUser.displayName}</h2>
+                      {farcasterUser.verified && (
+                        <span className="text-blue-400">✓</span>
+                      )}
+                    </div>
+                    <p className="text-purple-400">@{farcasterUser.username}</p>
+                    <p className="text-sm text-gray-400">FID: {farcasterUser.fid}</p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-800/50 rounded-2xl p-6 border border-white/5 text-center"
+              >
+                <div className="text-6xl mb-4">🐉</div>
+                <h2 className="text-xl font-bold text-white mb-2">Welcome to MiniMoon!</h2>
+                <p className="text-gray-400 mb-4">Open this app in Warpcast to connect your FarCaster profile</p>
+                <p className="text-sm text-gray-500">Connect your wallet to start playing</p>
+              </motion.div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-3">
@@ -133,28 +152,6 @@ export default function FarCasterPage() {
               ))}
             </div>
 
-            {/* Featured Monsters */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
-            >
-              <h3 className="text-lg font-bold text-white mb-4">Featured Monsters</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {featuredMonsters.map((monster) => (
-                  <div
-                    key={monster.name}
-                    className="text-center p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-colors cursor-pointer"
-                  >
-                    <div className="text-3xl mb-1">{monster.emoji}</div>
-                    <div className="text-xs text-white truncate">{monster.name}</div>
-                    <div className="text-xs text-amber-400">⚔️ {monster.power}</div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
             {/* Subscription CTA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -176,29 +173,32 @@ animate={{ opacity: 1, y: 0 }}
               </div>
             </motion.div>
 
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
-            >
-              <h3 className="text-lg font-bold text-white mb-4">Your Stats</h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-amber-400">7</div>
-                  <div className="text-sm text-gray-400">Monsters</div>
+            {/* Stats - Only show if user is connected */}
+            {isConnected && farcasterUser ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-slate-800/50 rounded-2xl p-6 border border-white/5"
+              >
+                <h3 className="text-lg font-bold text-white mb-4">Your Stats</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-amber-400">-</div>
+                    <div className="text-sm text-gray-400">Monsters</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-red-400">-</div>
+                    <div className="text-sm text-gray-400">Total Power</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-400">-</div>
+                    <div className="text-sm text-gray-400">Battle Wins</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-red-400">3,450</div>
-                  <div className="text-sm text-gray-400">Total Power</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-400">156</div>
-                  <div className="text-sm text-gray-400">Battle Wins</div>
-                </div>
-              </div>
-            </motion.div>
+                <p className="text-center text-gray-500 text-sm mt-4">Connect wallet to see real stats</p>
+              </motion.div>
+            ) : null}
 
             {/* Footer */}
             <div className="text-center text-gray-500 text-sm py-4">
