@@ -127,13 +127,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
             const context = await sdk.context;
             setMiniAppContext(context);
 
-            // Call ready() to hide splash screen
-            if (sdk.actions) {
-              sdk.actions.ready();
-            }
+            // Call ready() to hide splash screen and display app
+            await sdk.actions.ready();
           }
         } catch (error) {
-          console.log('FarCaster SDK not available:', error);
+          console.log('FarCaster SDK initialization:', error);
+          // Still call ready() even if there's an error to show the app
+          try {
+            await sdk.actions.ready();
+          } catch (readyError) {
+            // Silently ignore ready errors
+          }
         }
       };
 
